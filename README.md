@@ -1,6 +1,6 @@
-# AI Finance Controller
+# AI Settlement Controller
 
-> An AI-powered financial operations controller that detects financial drift, investigates root causes, quantifies financial impact, and routes exceptions for controlled resolution.
+> AI Settlement Controller is a finance-operations control system that continuously compares expected and observed settlement behavior, detects financial drift, investigates its root cause using deterministic evidence tools and AI reasoning, calculates financial exposure, and routes each case toward an appropriate controlled resolution.
 
 ## Razorpay Buildathon 2026
 
@@ -12,22 +12,26 @@ The challenge is to build an agent that closes a finance-operations loop across 
 
 ## Problem
 
-Financial operations teams often have to monitor multiple sources of financial data:
+Finance teams often discover settlement problems as **unexplained discrepancies**:
 
-- Payments
-- Settlements
-- Bank transactions
-- Fees
-- Refunds
-- Adjustments
+- Money settled late
+- Money never settled
+- Settlement amount differs from expected amount
+- Fee suddenly changes
+- Duplicate settlement appears
+- Refund is not reflected correctly
+- Partial settlement occurs
+- Payment behavior changes unexpectedly
 
-The difficult part is not simply identifying that two numbers are different.
+The difficult part is not merely identifying that two numbers differ.
 
-The real question is:
+The difficult part is answering:
 
-> **What changed, why did it change, how much money is affected, and what should the finance team do next?**
+> **What changed? Why did it change? How much money is affected? Is the explanation supported by evidence? And should the finance team resolve it automatically or review it?**
 
-This project aims to automate that investigation while maintaining financial correctness, traceability, and human control.
+Current reconciliation workflows often require manual investigation across multiple financial sources.
+
+The AI Settlement Controller closes this investigation loop by combining deterministic financial controls with AI-assisted evidence analysis.
 
 ---
 

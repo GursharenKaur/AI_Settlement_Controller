@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -29,7 +30,16 @@ def create_transaction(
     )
 
     db.add(db_transaction)
-    db.commit()
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Transaction with payment_id '{transaction.payment_id}' already exists.",
+        )
+
     db.refresh(db_transaction)
 
     return db_transaction

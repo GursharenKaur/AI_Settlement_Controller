@@ -1,0 +1,5 @@
+settlement_id,payment_id,settled_amount,currency,status,settled_at
+set_batch_001,pay_batch_001,5000.00,INR,settled,2026-09-02T13:00:00Z
+set_batch_002,pay_batch_002,7500.00,INR,settled,2026-09-02T13:05:00Z
+set_test_001,pay_test_001,11750.00,INR,settled,2026-09-02T13:10:00Z
+set_test_002,pay_test_002,9800.00,INR,settled,2026-09-02T13:15:00Z

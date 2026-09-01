@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.models.settlement import Settlement
 from app.schemas.settlement import SettlementCreate, SettlementResponse
+from app.services.settlement_ingestion import ingest_settlement
 
 
 router = APIRouter(
@@ -22,21 +21,12 @@ def create_settlement(
     settlement: SettlementCreate,
     db: Session = Depends(get_db),
 ):
-    db_settlement = Settlement(
-        settlement_id=settlement.settlement_id,
-        payment_id=settlement.payment_id,
-        settled_amount=settlement.settled_amount,
-        currency=settlement.currency,
-        status=settlement.status,
-        settled_at=settlement.settled_at,
+    db_settlement, is_duplicate = ingest_settlement(
+        db=db,
+        settlement=settlement,
     )
 
-    db.add(db_settlement)
-
-    try:
-        db.commit()
-    except IntegrityError:
-        db.rollback()
+    if is_duplicate:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
@@ -44,7 +34,5 @@ def create_settlement(
                 f"'{settlement.settlement_id}' already exists."
             ),
         )
-
-    db.refresh(db_settlement)
 
     return db_settlement

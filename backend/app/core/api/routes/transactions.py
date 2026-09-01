@@ -27,6 +27,7 @@ def create_transaction(
         amount=transaction.amount,
         currency=transaction.currency,
         status=transaction.status,
+        paid_at=transaction.paid_at,
     )
 
     db.add(db_transaction)

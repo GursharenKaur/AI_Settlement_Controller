@@ -25,6 +25,8 @@ class TransactionCreate(BaseModel):
         max_length=30
     )
 
+    paid_at: datetime
+
 
 class TransactionResponse(BaseModel):
     id: int
@@ -32,6 +34,7 @@ class TransactionResponse(BaseModel):
     amount: Decimal
     currency: str
     status: str
+    paid_at: datetime
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

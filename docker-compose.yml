@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: settlement_controller_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: settlement_controller
+      POSTGRES_USER: settlement_user
+      POSTGRES_PASSWORD: settlement_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

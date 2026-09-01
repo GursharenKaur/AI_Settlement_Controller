@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -43,3 +43,46 @@ def create_transaction(
     db.refresh(db_transaction)
 
     return db_transaction
+
+
+@router.get(
+    "",
+    response_model=list[TransactionResponse],
+)
+def list_transactions(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    transactions = (
+        db.query(Transaction)
+        .order_by(Transaction.id)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return transactions
+
+
+@router.get(
+    "/{transaction_id}",
+    response_model=TransactionResponse,
+)
+def get_transaction(
+    transaction_id: int,
+    db: Session = Depends(get_db),
+):
+    transaction = (
+        db.query(Transaction)
+        .filter(Transaction.id == transaction_id)
+        .first()
+    )
+
+    if transaction is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Transaction with id '{transaction_id}' not found.",
+        )
+
+    return transaction

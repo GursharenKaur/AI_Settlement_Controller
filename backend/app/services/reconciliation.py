@@ -35,6 +35,21 @@ def reconcile_transaction(
             settlement_currency=None,
         )
 
+    if (
+        transaction.status.lower() == "created"
+        and settlement.status.lower() == "settled"
+    ):
+        return ReconciliationResult(
+            payment_id=transaction.payment_id,
+            status=ReconciliationStatus.INVALID_STATE,
+            expected_amount=expected_amount,
+            actual_settled_amount=settlement.settled_amount,
+            drift=None,
+            drift_direction=DriftDirection.NONE,
+            transaction_currency=transaction.currency,
+            settlement_currency=settlement.currency,
+        )
+    
     if transaction.currency != settlement.currency:
         return ReconciliationResult(
             payment_id=transaction.payment_id,

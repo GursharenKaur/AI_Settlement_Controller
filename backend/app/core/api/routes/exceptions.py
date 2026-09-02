@@ -6,7 +6,8 @@ from app.services.exception_intelligence import assess_exception
 from app.services.exception_overview import get_exception_overview
 from app.services.reconciliation import reconcile_payment
 from app.services.exception_summary import get_exception_summary
-
+from app.services.ai_analysis import generate_exception_analysis
+from app.services.ai_context import build_exception_ai_context
 
 router = APIRouter(
     prefix="/exceptions",
@@ -43,3 +44,27 @@ def get_exception(
         )
 
     return assess_exception(reconciliation_result)
+
+@router.get("/{payment_id}/ai-analysis")
+def get_exception_ai_analysis(
+    payment_id: str,
+    db: Session = Depends(get_db),
+):
+    result = reconcile_payment(db, payment_id)
+
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Payment {payment_id} not found",
+        )
+
+    assessment = assess_exception(result)
+
+    summary = get_exception_summary(db)
+
+    context = build_exception_ai_context(
+        assessment=assessment,
+        summary=summary,
+    )
+
+    return generate_exception_analysis(context)

@@ -8,6 +8,10 @@ from app.services.reconciliation import reconcile_payment
 from app.services.exception_summary import get_exception_summary
 from app.services.ai_analysis import generate_exception_analysis
 from app.services.ai_context import build_exception_ai_context
+from app.services.ai_portfolio_analysis import generate_portfolio_analysis
+from app.services.ai_portfolio_context import build_portfolio_ai_context
+from app.schemas.ai_portfolio_analysis import AIPortfolioAnalysis
+
 
 router = APIRouter(
     prefix="/exceptions",
@@ -26,6 +30,13 @@ def get_exception_summary_overview(
     db: Session = Depends(get_db),
 ):
     return get_exception_summary(db)
+
+@router.get("/ai-analysis", response_model=AIPortfolioAnalysis)
+def get_portfolio_ai_analysis(db: Session = Depends(get_db)):
+    summary = get_exception_summary(db)
+    context = build_portfolio_ai_context(summary)
+    return generate_portfolio_analysis(context)
+
 
 @router.get("/{payment_id}")
 def get_exception(

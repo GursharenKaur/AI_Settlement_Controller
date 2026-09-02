@@ -26,3 +26,4 @@ class ExceptionAssessment(BaseModel):
     category: ExceptionCategory
     severity: ExceptionSeverity
     financial_impact: Decimal | None
+    priority_score: int

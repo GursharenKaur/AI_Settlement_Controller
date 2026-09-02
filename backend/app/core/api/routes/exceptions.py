@@ -2,14 +2,22 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.services.reconciliation import reconcile_payment
 from app.services.exception_intelligence import assess_exception
+from app.services.exception_overview import get_exception_overview
+from app.services.reconciliation import reconcile_payment
 
 
 router = APIRouter(
     prefix="/exceptions",
     tags=["Exceptions"],
 )
+
+
+@router.get("")
+def get_exceptions(
+    db: Session = Depends(get_db),
+):
+    return get_exception_overview(db)
 
 
 @router.get("/{payment_id}")

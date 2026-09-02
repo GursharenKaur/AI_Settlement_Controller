@@ -5,7 +5,7 @@ from app.models.transaction import Transaction
 from app.services.exception_intelligence import assess_exception
 from app.services.reconciliation import reconcile_transaction
 from app.schemas.exception import ExceptionAssessment
-
+from app.models.exception import ExceptionRecord
 
 def get_exception_overview(db: Session) -> list[ExceptionAssessment]:
     transactions = db.query(Transaction).order_by(Transaction.id).all()
@@ -26,6 +26,22 @@ def get_exception_overview(db: Session) -> list[ExceptionAssessment]:
         )
 
         assessment = assess_exception(reconciliation_result)
+
+        if assessment.is_exception:
+            lifecycle_record = (
+                db.query(ExceptionRecord)
+                .filter(
+                    ExceptionRecord.payment_id == assessment.payment_id
+                )
+                .first()
+            )
+
+            assessment.lifecycle_status = (
+                lifecycle_record.status
+                if lifecycle_record is not None
+                else None
+            )
+
         assessments.append(assessment)
 
     assessments = [

@@ -11,10 +11,12 @@ def build_portfolio_ai_context(
     All financial and risk metrics come from the deterministic
     exception summary. This function does not perform AI reasoning.
     """
-
     return PortfolioAIContext(
         total_transactions=summary.total_transactions,
         total_exceptions=summary.total_exceptions,
+        open_exception_count=summary.open_exception_count,
+        acknowledged_exception_count=summary.acknowledged_exception_count,
+        resolved_exception_count=summary.resolved_exception_count,
         exception_rate=summary.exception_rate,
         total_known_financial_impact=summary.total_known_financial_impact,
         financial_impact_rate=summary.financial_impact_rate,

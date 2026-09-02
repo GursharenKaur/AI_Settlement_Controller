@@ -25,6 +25,9 @@ Analyze the following trusted portfolio-level exception data.
 
 Total Transactions: {context.total_transactions}
 Total Exceptions: {context.total_exceptions}
+Open Exceptions: {context.open_exception_count}
+Acknowledged Exceptions: {context.acknowledged_exception_count}
+Resolved Exceptions: {context.resolved_exception_count}
 Exception Rate: {context.exception_rate}%
 Total Known Financial Impact: {context.total_known_financial_impact}
 Financial Impact Rate: {context.financial_impact_rate}%
@@ -73,6 +76,11 @@ Important rules:
     actions must not be performed autonomously.
 14. The focus category must be one of the exception categories
     present in the supplied data.
+15. Consider exception lifecycle state when assessing operational urgency.
+16. Distinguish unresolved operational work from exceptions that have already
+    been resolved.
+17. Do not treat resolved exceptions as current unresolved workload.
+18. Do not infer that an exception with no lifecycle record is OPEN.
 """
 
     response = client.models.generate_content(

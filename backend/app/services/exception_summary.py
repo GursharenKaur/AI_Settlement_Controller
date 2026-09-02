@@ -2,12 +2,15 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
+from app.models.exception import ExceptionLifecycleStatus
+from app.models.transaction import Transaction
 from app.schemas.exception_overview import ExceptionSummary
 from app.services.exception_overview import get_exception_overview
-from app.models.transaction import Transaction
+
 
 def get_exception_summary(db: Session) -> ExceptionSummary:
     assessments = get_exception_overview(db)
+
     total_transactions = db.query(Transaction).count()
 
     total_transaction_amount = (
@@ -20,11 +23,16 @@ def get_exception_summary(db: Session) -> ExceptionSummary:
         (amount for (amount,) in total_transaction_amount),
         Decimal("0"),
     )
+
     category_counts: dict[str, int] = {}
     severity_counts: dict[str, int] = {}
     financial_impact_by_category: dict[str, Decimal] = {}
 
     total_known_financial_impact = Decimal("0")
+
+    open_exception_count = 0
+    acknowledged_exception_count = 0
+    resolved_exception_count = 0
 
     for assessment in assessments:
         category = assessment.category.value
@@ -33,14 +41,30 @@ def get_exception_summary(db: Session) -> ExceptionSummary:
         category_counts[category] = category_counts.get(category, 0) + 1
         severity_counts[severity] = severity_counts.get(severity, 0) + 1
 
+        if assessment.lifecycle_status == ExceptionLifecycleStatus.OPEN:
+            open_exception_count += 1
+        elif (
+            assessment.lifecycle_status
+            == ExceptionLifecycleStatus.ACKNOWLEDGED
+        ):
+            acknowledged_exception_count += 1
+        elif (
+            assessment.lifecycle_status
+            == ExceptionLifecycleStatus.RESOLVED
+        ):
+            resolved_exception_count += 1
+
         if assessment.financial_impact is not None:
             total_known_financial_impact += assessment.financial_impact
 
             financial_impact_by_category[category] = (
-                financial_impact_by_category.get(category, Decimal("0"))
+                financial_impact_by_category.get(
+                    category,
+                    Decimal("0"),
+                )
                 + assessment.financial_impact
             )
-    
+
     dominant_exception_category = (
         max(
             category_counts,
@@ -80,16 +104,10 @@ def get_exception_summary(db: Session) -> ExceptionSummary:
         financial_risk_level = "NONE"
 
     exception_rate = (
-        Decimal(len(assessments)) / Decimal(total_transactions) * Decimal("100")
-        if total_transactions > 0
-        else Decimal("0")
-    )
-
-    financial_impact_rate = (
-        total_known_financial_impact
-        / total_transaction_amount
+        Decimal(len(assessments))
+        / Decimal(total_transactions)
         * Decimal("100")
-        if total_transaction_amount > 0
+        if total_transactions > 0
         else Decimal("0")
     )
 
@@ -103,6 +121,9 @@ def get_exception_summary(db: Session) -> ExceptionSummary:
 
     return ExceptionSummary(
         total_exceptions=len(assessments),
+        open_exception_count=open_exception_count,
+        acknowledged_exception_count=acknowledged_exception_count,
+        resolved_exception_count=resolved_exception_count,
         total_transactions=total_transactions,
         exception_rate=exception_rate,
         total_known_financial_impact=total_known_financial_impact,

@@ -3,6 +3,7 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+from app.models.exception import ExceptionLifecycleStatus
 
 class ExceptionCategory(str, Enum):
     NONE = "NONE"
@@ -27,3 +28,4 @@ class ExceptionAssessment(BaseModel):
     severity: ExceptionSeverity
     financial_impact: Decimal | None
     priority_score: int
+    lifecycle_status: ExceptionLifecycleStatus | None = None

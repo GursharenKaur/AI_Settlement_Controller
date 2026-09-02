@@ -5,6 +5,9 @@ from pydantic import BaseModel
 
 class ExceptionSummary(BaseModel):
     total_exceptions: int
+    open_exception_count: int
+    acknowledged_exception_count: int
+    resolved_exception_count: int
     total_transactions: int
     exception_rate: Decimal
     total_known_financial_impact: Decimal

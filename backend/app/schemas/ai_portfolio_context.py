@@ -6,6 +6,9 @@ from pydantic import BaseModel
 class PortfolioAIContext(BaseModel):
     total_transactions: int
     total_exceptions: int
+    open_exception_count: int   
+    acknowledged_exception_count: int
+    resolved_exception_count: int
     exception_rate: Decimal
     total_known_financial_impact: Decimal
     financial_impact_rate: Decimal

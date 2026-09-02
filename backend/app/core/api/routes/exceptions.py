@@ -11,7 +11,9 @@ from app.services.ai_context import build_exception_ai_context
 from app.services.ai_portfolio_analysis import generate_portfolio_analysis
 from app.services.ai_portfolio_context import build_portfolio_ai_context
 from app.schemas.ai_portfolio_analysis import AIPortfolioAnalysis
-
+from app.models.exception import ExceptionLifecycleStatus
+from app.schemas.exception_lifecycle import ExceptionLifecycleResponse
+from app.services.exception_lifecycle import get_or_create_exception_record
 
 router = APIRouter(
     prefix="/exceptions",
@@ -37,6 +39,50 @@ def get_portfolio_ai_analysis(db: Session = Depends(get_db)):
     context = build_portfolio_ai_context(summary)
     return generate_portfolio_analysis(context)
 
+@router.post(
+    "/{payment_id}/acknowledge",
+    response_model=ExceptionLifecycleResponse,
+)
+def acknowledge_exception(
+    payment_id: str,
+    db: Session = Depends(get_db),
+):
+    record = get_or_create_exception_record(db, payment_id)
+
+    if record.status == ExceptionLifecycleStatus.OPEN:
+        record.status = ExceptionLifecycleStatus.ACKNOWLEDGED
+        db.commit()
+        db.refresh(record)
+
+    return record
+
+
+@router.post(
+    "/{payment_id}/resolve",
+    response_model=ExceptionLifecycleResponse,
+)
+def resolve_exception(
+    payment_id: str,
+    db: Session = Depends(get_db),
+):
+    record = get_or_create_exception_record(db, payment_id)
+
+    if record.status == ExceptionLifecycleStatus.ACKNOWLEDGED:
+        record.status = ExceptionLifecycleStatus.RESOLVED
+        db.commit()
+        db.refresh(record)
+
+    return record
+
+@router.get(
+    "/{payment_id}/lifecycle",
+    response_model=ExceptionLifecycleResponse,
+)
+def get_exception_lifecycle(
+    payment_id: str,
+    db: Session = Depends(get_db),
+):
+    return get_or_create_exception_record(db, payment_id)
 
 @router.get("/{payment_id}")
 def get_exception(

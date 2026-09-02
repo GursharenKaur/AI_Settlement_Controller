@@ -12,6 +12,7 @@ def get_exception_summary(db: Session) -> ExceptionSummary:
 
     category_counts: dict[str, int] = {}
     severity_counts: dict[str, int] = {}
+    financial_impact_by_category: dict[str, Decimal] = {}
 
     total_known_financial_impact = Decimal("0")
 
@@ -24,6 +25,20 @@ def get_exception_summary(db: Session) -> ExceptionSummary:
 
         if assessment.financial_impact is not None:
             total_known_financial_impact += assessment.financial_impact
+
+            financial_impact_by_category[category] = (
+                financial_impact_by_category.get(category, Decimal("0"))
+                + assessment.financial_impact
+            )
+    
+    dominant_exception_category = (
+        max(
+            category_counts,
+            key=lambda category: category_counts[category],
+        )
+        if category_counts
+        else None
+    )
 
     high_priority_count = sum(
         1
@@ -47,8 +62,10 @@ def get_exception_summary(db: Session) -> ExceptionSummary:
         total_transactions=total_transactions,
         exception_rate=exception_rate,
         total_known_financial_impact=total_known_financial_impact,
+        financial_impact_by_category=financial_impact_by_category,
         category_counts=category_counts,
         severity_counts=severity_counts,
         high_priority_count=high_priority_count,
         highest_priority_score=highest_priority_score,
+        dominant_exception_category=dominant_exception_category,
     )

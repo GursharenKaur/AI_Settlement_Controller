@@ -1,0 +1,14 @@
+from decimal import Decimal
+
+from pydantic import BaseModel
+
+
+class ExceptionSummary(BaseModel):
+    total_exceptions: int
+    total_transactions: int
+    exception_rate: Decimal
+    total_known_financial_impact: Decimal
+    category_counts: dict[str, int]
+    severity_counts: dict[str, int]
+    high_priority_count: int
+    highest_priority_score: int

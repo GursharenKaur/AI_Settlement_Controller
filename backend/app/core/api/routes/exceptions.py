@@ -5,6 +5,7 @@ from app.db.database import get_db
 from app.services.exception_intelligence import assess_exception
 from app.services.exception_overview import get_exception_overview
 from app.services.reconciliation import reconcile_payment
+from app.services.exception_summary import get_exception_summary
 
 
 router = APIRouter(
@@ -19,6 +20,11 @@ def get_exceptions(
 ):
     return get_exception_overview(db)
 
+@router.get("/summary")
+def get_exception_summary_overview(
+    db: Session = Depends(get_db),
+):
+    return get_exception_summary(db)
 
 @router.get("/{payment_id}")
 def get_exception(

@@ -7,19 +7,8 @@ from app.services.reconciliation import reconcile_transaction
 from app.schemas.exception import ExceptionAssessment
 
 
-def get_exception_overview(
-    db: Session,
-) -> list[ExceptionAssessment]:
-    """
-    Reconcile all transactions and convert the results
-    into operational exception assessments.
-    """
-
-    transactions = (
-        db.query(Transaction)
-        .order_by(Transaction.id)
-        .all()
-    )
+def get_exception_overview(db: Session) -> list[ExceptionAssessment]:
+    transactions = db.query(Transaction).order_by(Transaction.id).all()
 
     assessments: list[ExceptionAssessment] = []
 
@@ -37,7 +26,17 @@ def get_exception_overview(
         )
 
         assessment = assess_exception(reconciliation_result)
-
         assessments.append(assessment)
+
+    assessments = [
+        assessment
+        for assessment in assessments
+        if assessment.is_exception
+    ]
+
+    assessments.sort(
+        key=lambda assessment: assessment.priority_score,
+        reverse=True,
+    )
 
     return assessments

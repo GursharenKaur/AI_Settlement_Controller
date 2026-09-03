@@ -4,6 +4,7 @@ from app.models.exception import ExceptionRecord
 from app.schemas.operational_control import (
     OperationalControlledAction,
     OperationalExceptionControl,
+    OperationalControlSummary,
 )
 from app.services.controller_decision import build_controller_decision
 from app.services.exception_intelligence import assess_exception
@@ -11,6 +12,7 @@ from app.services.exception_lifecycle import (
     get_controlled_actions_for_exception,
 )
 from app.services.reconciliation import reconcile_payment
+from decimal import Decimal
 
 
 def get_operational_exception_control(
@@ -136,3 +138,97 @@ def get_operational_exception_controls(
     )
 
     return controls
+
+def get_operational_control_summary(
+    db: Session,
+) -> OperationalControlSummary:
+    """
+    Build the consolidated operational control summary.
+
+    The summary is derived from the existing operational risk
+    queue and does not independently calculate financial impact
+    or risk classification.
+    """
+
+    from app.services.operational_risk import (
+        get_operational_risk_queue,
+    )
+
+    risk_queue = get_operational_risk_queue(db)
+
+    total_known_financial_impact = sum(
+        (
+            item.financial_impact
+            for item in risk_queue
+            if item.financial_impact is not None
+        ),
+        Decimal("0"),
+    )
+
+    action_required_count = sum(
+        1
+        for item in risk_queue
+        if item.attention_status == "ACTION_REQUIRED"
+    )
+
+    in_progress_count = sum(
+        1
+        for item in risk_queue
+        if item.attention_status == "IN_PROGRESS"
+    )
+
+    human_resolution_required_count = sum(
+        1
+        for item in risk_queue
+        if item.attention_status == "HUMAN_RESOLUTION_REQUIRED"
+    )
+
+    monitor_count = sum(
+        1
+        for item in risk_queue
+        if item.attention_status == "MONITOR"
+    )
+
+    no_action_required_count = sum(
+        1
+        for item in risk_queue
+        if item.attention_status == "NO_ACTION_REQUIRED"
+    )
+
+    outstanding_control_count = (
+        action_required_count
+        + in_progress_count
+        + human_resolution_required_count
+    )
+
+    highest_priority_item = risk_queue[0] if risk_queue else None
+
+    return OperationalControlSummary(
+        total_exceptions=len(risk_queue),
+
+        action_required_count=action_required_count,
+        in_progress_count=in_progress_count,
+        human_resolution_required_count=human_resolution_required_count,
+        monitor_count=monitor_count,
+        no_action_required_count=no_action_required_count,
+
+        total_known_financial_impact=total_known_financial_impact,
+
+        highest_priority_payment_id=(
+            highest_priority_item.payment_id
+            if highest_priority_item
+            else None
+        ),
+        highest_priority_score=(
+            highest_priority_item.priority_score
+            if highest_priority_item
+            else None
+        ),
+        highest_priority_financial_impact=(
+            highest_priority_item.financial_impact
+            if highest_priority_item
+            else None
+        ),
+
+        outstanding_control_count=outstanding_control_count,
+    )

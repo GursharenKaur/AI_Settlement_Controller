@@ -1,10 +1,14 @@
 from sqlalchemy.orm import Session
 
-from app.schemas.operational_risk import OperationalRiskItem
+from app.schemas.operational_risk import (
+    OperationalRiskItem,
+    OperationalRiskSummary,
+)
+
 from app.services.operational_control import (
     get_operational_exception_controls,
 )
-
+from decimal import Decimal
 
 ATTENTION_RANK = {
     "ACTION_REQUIRED": 5,
@@ -100,3 +104,85 @@ def get_operational_risk_queue(
     )
 
     return risk_items
+
+def get_operational_risk_summary(
+    db: Session,
+) -> OperationalRiskSummary:
+    """
+    Build a deterministic operational risk summary
+    from the operational risk queue.
+
+    This function does not:
+    - recalculate financial impact,
+    - call AI,
+    - modify financial records,
+    - execute controlled actions,
+    - change lifecycle state,
+    - or create audit events.
+    """
+
+    risk_items = get_operational_risk_queue(db)
+
+    attention_counts = {
+        "ACTION_REQUIRED": 0,
+        "IN_PROGRESS": 0,
+        "HUMAN_RESOLUTION_REQUIRED": 0,
+        "MONITOR": 0,
+        "NO_ACTION_REQUIRED": 0,
+    }
+
+    total_known_financial_impact = Decimal("0")
+
+    for item in risk_items:
+        attention_counts[item.attention_status] += 1
+
+        if item.financial_impact is not None:
+            total_known_financial_impact += item.financial_impact
+
+    actionable_items = [
+        item
+        for item in risk_items
+        if item.attention_status != "NO_ACTION_REQUIRED"
+    ]
+
+    if actionable_items:
+        highest_priority = actionable_items[0]
+
+        highest_priority_payment_id = (
+            highest_priority.payment_id
+        )
+        highest_priority_score = (
+            highest_priority.priority_score
+        )
+        highest_priority_financial_impact = (
+            highest_priority.financial_impact
+        )
+    else:
+        highest_priority_payment_id = None
+        highest_priority_score = None
+        highest_priority_financial_impact = None
+
+    return OperationalRiskSummary(
+        total_exceptions=len(risk_items),
+        action_required_count=attention_counts["ACTION_REQUIRED"],
+        in_progress_count=attention_counts["IN_PROGRESS"],
+        human_resolution_required_count=(
+            attention_counts["HUMAN_RESOLUTION_REQUIRED"]
+        ),
+        monitor_count=attention_counts["MONITOR"],
+        no_action_required_count=(
+            attention_counts["NO_ACTION_REQUIRED"]
+        ),
+        total_known_financial_impact=(
+            total_known_financial_impact
+        ),
+        highest_priority_payment_id=(
+            highest_priority_payment_id
+        ),
+        highest_priority_score=(
+            highest_priority_score
+        ),
+        highest_priority_financial_impact=(
+            highest_priority_financial_impact
+        ),
+    )

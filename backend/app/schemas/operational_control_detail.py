@@ -8,6 +8,7 @@ from app.models.controlled_action import (
     ControlledActionType,
 )
 from app.models.exception import ExceptionLifecycleStatus
+from app.models.audit_log import AuditEventType
 from app.schemas.controller_decision import ControllerAction
 from app.schemas.exception import (
     ExceptionCategory,
@@ -15,11 +16,14 @@ from app.schemas.exception import (
 )
 
 
-class OperationalControlledAction(BaseModel):
+class OperationalControlAction(BaseModel):
     id: int
     action_type: ControlledActionType
     status: ControlledActionStatus
+    reason: str
     result: str | None
+    created_at: datetime
+    updated_at: datetime
     executed_at: datetime | None
 
     model_config = {
@@ -27,31 +31,33 @@ class OperationalControlledAction(BaseModel):
     }
 
 
-class OperationalExceptionControl(BaseModel):
+class OperationalControlAuditEvent(BaseModel):
+    id: int
     payment_id: str
+    controlled_action_id: int | None
+    event_type: AuditEventType
+    message: str
+    created_at: datetime
+
+    model_config = {
+        "from_attributes": True,
+    }
+
+
+class OperationalControlDetail(BaseModel):
+    payment_id: str
+
     category: ExceptionCategory
     severity: ExceptionSeverity
     financial_impact: Decimal | None
     priority_score: int
+
     lifecycle_status: ExceptionLifecycleStatus | None
+
     recommended_action: ControllerAction
     human_review_required: bool
-    controlled_actions: list[OperationalControlledAction]
+
     remediation_status: str
 
-class OperationalControlSummary(BaseModel):
-    total_exceptions: int
-
-    action_required_count: int
-    in_progress_count: int
-    human_resolution_required_count: int
-    monitor_count: int
-    no_action_required_count: int
-
-    total_known_financial_impact: Decimal
-
-    highest_priority_payment_id: str | None
-    highest_priority_score: int | None
-    highest_priority_financial_impact: Decimal | None
-
-    outstanding_control_count: int
+    controlled_actions: list[OperationalControlAction]
+    audit_events: list[OperationalControlAuditEvent]

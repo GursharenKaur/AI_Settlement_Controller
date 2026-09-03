@@ -8,6 +8,16 @@ from app.services.operational_control import (
     get_operational_exception_controls,
 )
 
+from app.schemas.operational_control_detail import OperationalControlDetail
+from app.services.operational_control_detail import (
+    get_operational_control_detail,
+)
+from app.schemas.operational_control import OperationalControlSummary
+
+from app.services.operational_control import (
+    get_operational_control_summary,
+)
+
 router = APIRouter(
     prefix="/control",
     tags=["Operational Control"],
@@ -58,3 +68,43 @@ def get_operational_control_exception(
         )
 
     return result
+
+@router.get(
+    "/exceptions/{payment_id}/detail",
+    response_model=OperationalControlDetail,
+)
+def get_operational_control_exception_detail(
+    payment_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Return the complete operational control detail
+    for one exception.
+
+    This endpoint is read-only.
+    """
+
+    result = get_operational_control_detail(
+        db=db,
+        payment_id=payment_id,
+    )
+
+    if result is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"No operational exception found for payment "
+                f"{payment_id}"
+            ),
+        )
+
+    return result
+
+@router.get(
+    "/summary",
+    response_model=OperationalControlSummary,
+)
+def get_operational_control_summary_endpoint(
+    db: Session = Depends(get_db),
+):
+    return get_operational_control_summary(db)

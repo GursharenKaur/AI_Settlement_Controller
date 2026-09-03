@@ -21,6 +21,9 @@ from app.services.controlled_action_execution import (
     complete_controlled_action,
 )
 
+from app.models.audit_log import AuditEventType
+from app.services.audit_log import create_audit_log
+
 router = APIRouter(
     prefix="/controlled-actions",
     tags=["Controlled Actions"],
@@ -67,11 +70,21 @@ def create_controlled_action(
     requested_action = ControllerAction(request.action_type.value)
 
     is_valid, validation_reason = validate_controller_action(
-        decision=decision,
-        requested_action=requested_action,
+        decision,
+        requested_action,
     )
 
     if not is_valid:
+        create_audit_log(
+            db=db,
+            payment_id=request.payment_id,
+            event_type=AuditEventType.CONTROLLED_ACTION_REJECTED,
+            message=(
+                f"Controlled action request rejected for action type "
+                f"'{requested_action.value}': {validation_reason}"
+            ),
+        )
+
         raise HTTPException(
             status_code=400,
             detail=validation_reason,
@@ -86,6 +99,17 @@ def create_controlled_action(
     db.add(controlled_action)
     db.commit()
     db.refresh(controlled_action)
+
+    create_audit_log(
+        db=db,
+        payment_id=controlled_action.payment_id,
+        controlled_action_id=controlled_action.id,
+        event_type=AuditEventType.CONTROLLED_ACTION_CREATED,
+        message=(
+            f"Controlled action {controlled_action.id} created for "
+            f"action type '{controlled_action.action_type.value}'."
+        ),
+    )
 
     return controlled_action
 

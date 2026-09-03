@@ -2,10 +2,12 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
+from app.models.audit_log import AuditEventType
 from app.models.controlled_action import (
     ControlledAction,
     ControlledActionStatus,
 )
+from app.services.audit_log import create_audit_log
 
 
 def start_controlled_action(
@@ -29,6 +31,17 @@ def start_controlled_action(
 
     db.commit()
     db.refresh(action)
+
+    create_audit_log(
+        db=db,
+        payment_id=action.payment_id,
+        controlled_action_id=action.id,
+        event_type=AuditEventType.CONTROLLED_ACTION_STARTED,
+        message=(
+            f"Controlled action {action.id} started execution "
+            f"for action type '{action.action_type.value}'."
+        ),
+    )
 
     return action
 
@@ -56,5 +69,15 @@ def complete_controlled_action(
 
     db.commit()
     db.refresh(action)
+
+    create_audit_log(
+        db=db,
+        payment_id=action.payment_id,
+        controlled_action_id=action.id,
+        event_type=AuditEventType.CONTROLLED_ACTION_COMPLETED,
+        message=(
+            f"Controlled action {action.id} completed successfully."
+        ),
+    )
 
     return action

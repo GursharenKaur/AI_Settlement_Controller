@@ -36,6 +36,12 @@ Controlled Action Execution
 Audit Trail
      ↓
 Human Review / Resolution
+     ↓
+Operational Control
+     ↓
+Operational Risk
+     ↓
+Control Summary
 ```
 
 The fundamental architectural principle is:
@@ -77,6 +83,8 @@ The current system consists of the following major layers:
                 │ Controller           │
                 │ Controlled Actions   │
                 │ Audit Logging        │
+                │ Operational Control  │
+                │ Operational Risk     │
                 └──────────┬──────────┘
                            │
               ┌────────────┼────────────┐
@@ -98,7 +106,7 @@ The current system consists of the following major layers:
        └──────────────────────────────┘
 ```
 
-The architecture now extends beyond ingestion and persistence into reconciliation, exception intelligence, AI-assisted analysis, deterministic action control, remediation tracking, and auditability.
+The architecture now extends beyond ingestion and persistence into reconciliation, exception intelligence, AI-assisted analysis, deterministic action control, remediation tracking, auditability, and operational risk/control views.
 
 ---
 
@@ -121,6 +129,8 @@ Exception Lifecycle
 AI Analysis
 Controller Decisions
 Controlled Actions
+Operational Control
+Operational Risk
 ```
 
 Representative endpoint groups include:
@@ -150,6 +160,14 @@ GET  /exceptions/{payment_id}/decision
 
 POST /controlled-actions
 POST /controlled-actions/{action_id}/execute
+
+GET  /control/exceptions
+GET  /control/exceptions/{payment_id}
+GET  /control/exceptions/{payment_id}/detail
+GET  /control/summary
+
+GET  /risk/queue
+GET  /risk/summary
 ```
 
 The API layer is responsible for HTTP request handling, response serialization, validation boundaries, and orchestration of the appropriate application services.
@@ -173,6 +191,10 @@ The schema layer provides boundaries for:
 * AI analysis
 * Controller decisions
 * Controlled actions
+* Operational control views
+* Operational risk views
+* Operational summaries
+* Operational control detail and audit representations
 
 Important financial validation properties include:
 
@@ -402,8 +424,6 @@ Known Financial Impact
 Priority Score
 ```
 
-The system uses higher priority for severe exceptions and provides additional weighting for significant known monetary exposure.
-
 The resulting priority is used to help determine which exceptions require greater operational attention.
 
 The architecture distinguishes:
@@ -450,8 +470,6 @@ The lifecycle determines the operational handling state.
 
 This distinction is important because a financial exception can remain unresolved even after an investigation or controlled operational action has completed.
 
-The lifecycle therefore prevents remediation execution from being incorrectly interpreted as financial resolution.
-
 ---
 
 ## 12. Portfolio Intelligence Architecture
@@ -479,16 +497,6 @@ Financial Risk Level
 ```
 
 The portfolio layer allows the system to move beyond individual payment investigation and identify broader operational risk.
-
-For example, the system can distinguish between:
-
-```text
-Most common exception category
-        versus
-Largest financial exposure category
-```
-
-These are not necessarily the same.
 
 ---
 
@@ -567,8 +575,6 @@ AI Explanation / Recommendation
 The AI must not invent monetary values.
 
 Where financial impact cannot safely be quantified, the AI must preserve that uncertainty rather than fabricate an amount.
-
-This prevents probabilistic model output from becoming an authoritative financial record.
 
 ---
 
@@ -654,20 +660,6 @@ INVESTIGATE_INVALID_STATE
 
 The validation layer ensures that only permitted action/category combinations can execute.
 
-For example:
-
-```text
-UNDER_SETTLEMENT
-        ↓
-REVIEW_SETTLEMENT_AMOUNT
-```
-
-is permitted.
-
-An unrelated action for the same exception is rejected.
-
-This establishes a deterministic safety boundary between AI recommendations and operational execution.
-
 ---
 
 ## 17. Controlled Action State Architecture
@@ -702,8 +694,6 @@ updated_at
 executed_at
 ```
 
-The action result records the operational outcome.
-
 The action state is intentionally separate from exception lifecycle state.
 
 For example:
@@ -717,8 +707,6 @@ Exception
 ```
 
 is valid.
-
-This ensures that completing an investigation/review action does not falsely imply that the underlying financial exception has been resolved.
 
 ---
 
@@ -752,8 +740,6 @@ Human Review
 Explicit Exception Resolution
 ```
 
-This preserves human authority over financial exception resolution.
-
 ---
 
 ## 19. Audit Architecture
@@ -782,20 +768,280 @@ created_at
 
 Successful actions and rejected actions are both recorded.
 
-This provides traceability for:
-
-* what action was requested
-* why it was requested
-* whether it was permitted
-* whether execution started
-* whether execution completed
-* whether the request was rejected
-
 The audit log is intentionally independent from the controlled-action lifecycle so that rejected attempts can also be preserved as part of the audit history.
 
 ---
 
-## 20. End-to-End Financial Control Flow
+## 20. Operational Control Architecture
+
+Phase 6 introduces an operational control layer on top of the existing reconciliation, exception, controller, remediation, and audit layers.
+
+The operational control layer does not create a second financial-processing system.
+
+Instead, it derives a read-only operational representation from existing system state.
+
+The flow is:
+
+```text
+Reconciliation
+      ↓
+Exception Intelligence
+      ↓
+Financial Impact + Priority
+      ↓
+Exception Lifecycle
+      ↓
+Controller Decision
+      ↓
+Controlled Actions
+      ↓
+Audit History
+      ↓
+Operational Control View
+      ↓
+Operational Risk Queue
+      ↓
+Control Summary
+```
+
+The operational control view combines:
+
+```text
+Exception
++
+Severity
++
+Financial Impact
++
+Priority
++
+Lifecycle
++
+Controller Decision
++
+Controlled Actions
++
+Remediation Status
+```
+
+The operational risk layer derives:
+
+```text
+Attention Status
++
+Priority
++
+Known Financial Impact
+```
+
+to produce a deterministic operational risk queue.
+
+Operational control APIs are read-only and do not execute remediation, modify financial records, resolve exceptions, create audit events, or invoke AI.
+
+---
+
+## 21. Operational Risk and Attention State
+
+The operational risk layer classifies exceptions into explicit attention states:
+
+```text
+ACTION_REQUIRED
+IN_PROGRESS
+HUMAN_RESOLUTION_REQUIRED
+MONITOR
+NO_ACTION_REQUIRED
+```
+
+The classification is deterministic.
+
+The precedence is:
+
+```text
+Lifecycle = RESOLVED
+        ↓
+NO_ACTION_REQUIRED
+
+Remediation = IN_PROGRESS
+        ↓
+IN_PROGRESS
+
+Remediation = COMPLETED
+and exception not resolved
+        ↓
+HUMAN_RESOLUTION_REQUIRED
+
+Human Review Required = true
+        ↓
+ACTION_REQUIRED
+
+Otherwise
+        ↓
+MONITOR
+```
+
+An exception with no persisted lifecycle record is not automatically considered safe to ignore.
+
+For example:
+
+```text
+lifecycle_status = null
++
+human_review_required = true
+        ↓
+ACTION_REQUIRED
+```
+
+This prevents missing lifecycle persistence from suppressing operational attention.
+
+The risk queue is ordered deterministically using:
+
+1. Attention rank
+2. Priority score
+3. Known financial impact
+
+Attention ranking is:
+
+```text
+ACTION_REQUIRED = 5
+IN_PROGRESS = 4
+HUMAN_RESOLUTION_REQUIRED = 3
+MONITOR = 2
+NO_ACTION_REQUIRED = 1
+```
+
+---
+
+## 22. Operational Risk Queue
+
+The operational risk queue answers:
+
+> Which cases should operations focus on first?
+
+Each risk item exposes:
+
+```text
+Payment
+Exception Category
+Severity
+Financial Impact
+Priority
+Lifecycle
+Recommended Action
+Human Review Requirement
+Remediation Status
+Attention Status
+```
+
+The queue is derived from the existing operational control state.
+
+It does not create a second financial-impact calculation or alternative priority algorithm.
+
+---
+
+## 23. Operational Control Detail
+
+The operational control detail endpoint answers:
+
+> What is the complete control history of this exception?
+
+It combines:
+
+```text
+Exception
++
+Controller Decision
++
+Lifecycle
++
+Controlled Actions
++
+Audit Events
+```
+
+The detail representation includes:
+
+```text
+payment_id
+category
+severity
+financial_impact
+priority_score
+lifecycle_status
+recommended_action
+human_review_required
+remediation_status
+controlled_actions
+audit_events
+```
+
+Each controlled action includes:
+
+```text
+id
+action_type
+status
+reason
+result
+created_at
+updated_at
+executed_at
+```
+
+Each audit event includes:
+
+```text
+id
+payment_id
+controlled_action_id
+event_type
+message
+created_at
+```
+
+The detail service is explicitly read-only.
+
+It may reconcile, assess, aggregate, and correlate existing state, but it cannot:
+
+```text
+Execute
+Resolve
+Mutate
+Create Audit Events
+```
+
+---
+
+## 24. Operational Control Summary
+
+The control summary provides aggregate operational indicators:
+
+```text
+Total Exceptions
+Action Required
+In Progress
+Human Resolution Required
+Monitor
+No Action Required
+Total Known Financial Impact
+Highest Priority Case
+Outstanding Controls
+```
+
+Outstanding controls are:
+
+```text
+ACTION_REQUIRED
++
+IN_PROGRESS
++
+HUMAN_RESOLUTION_REQUIRED
+```
+
+The summary is derived from the operational risk/control state rather than independently recreating financial calculations.
+
+---
+
+## 25. End-to-End Financial Control Flow
 
 The complete architecture now follows:
 
@@ -874,14 +1120,18 @@ Settlement Files ───────────┤
                  ┌──────────────────────┐
                  │ Human Review /       │
                  │ Explicit Resolution  │
+                 └──────────┬───────────┘
+                            │
+                            ▼
+                 ┌──────────────────────┐
+                 │ Operational Control │
+                 │ / Risk / Dashboard   │
                  └──────────────────────┘
 ```
 
-The system therefore progresses from raw payment and settlement events to financial truth, operational intelligence, controlled action, and finally auditable human-governed resolution.
-
 ---
 
-## 21. Data Persistence Architecture
+## 26. Data Persistence Architecture
 
 The PostgreSQL database currently persists the major financial and operational entities:
 
@@ -892,6 +1142,8 @@ exception_lifecycles
 controlled_actions
 audit_logs
 ```
+
+The operational control and risk layer does not introduce a separate operational database or duplicate financial records.
 
 The architecture intentionally separates:
 
@@ -906,13 +1158,18 @@ Operational State
 
 Audit History
     └── audit_logs
+
+Operational Views
+    ├── control views
+    ├── risk queue
+    └── summaries
 ```
 
-This separation prevents operational workflow state and audit history from being confused with the underlying financial records.
+Operational views are derived from the underlying financial and control state.
 
 ---
 
-## 22. Migration Layer
+## 27. Migration Layer
 
 Alembic manages database schema evolution.
 
@@ -929,11 +1186,17 @@ Controlled action result fields
 Audit log schema
 ```
 
-Database migrations ensure that application models and the PostgreSQL schema remain synchronized.
+No separate database migration is required for the Phase 6 operational views because they are derived from existing persisted state.
+
+The verified migration head is:
+
+```text
+832533f1f844
+```
 
 ---
 
-## 23. Architectural Principles
+## 28. Architectural Principles
 
 ### Deterministic Financial Core
 
@@ -944,8 +1207,6 @@ The reconciliation engine establishes the factual financial state first.
 Financial impact and priority calculations are also governed by deterministic application rules.
 
 AI operates on top of these trusted results.
-
----
 
 ### AI as an Intelligence Layer, Not a Financial Authority
 
@@ -969,8 +1230,6 @@ Move money
 Resolve exceptions automatically
 ```
 
----
-
 ### Deterministic Control Boundary
 
 Operational actions are authorized through deterministic controller and validation logic.
@@ -985,9 +1244,11 @@ Deterministic Authorization
 Controlled Execution
 ```
 
-This prevents arbitrary model output from becoming an operational command.
+### Read-Only Operational Visibility
 
----
+Operational control, risk, detail, and summary APIs provide visibility without introducing operational side effects.
+
+Dashboard/read operations cannot silently execute actions or resolve exceptions.
 
 ### Separation of Concerns
 
@@ -995,51 +1256,27 @@ The architecture separates:
 
 ```text
 API Layer
-
 Schema / Validation
-
 Business Services
-
 Financial Models
-
 Operational Models
-
 AI Integration
-
 Control Logic
-
 Audit Logging
-
 Database
 ```
-
-This makes the system easier to test, reason about, extend, and govern.
-
----
 
 ### Financial Precision
 
 Monetary calculations use `Decimal` and PostgreSQL fixed-precision numeric fields.
 
-Floating-point arithmetic is avoided for financial values.
-
----
-
 ### Explicit Uncertainty
 
 The system does not fabricate financial impact when the available data cannot safely quantify it.
 
-Unknown financial exposure remains unknown.
-
-This is particularly important for currency mismatches and invalid operational states.
-
----
-
 ### Lifecycle Separation
 
 Financial state, exception lifecycle, and controlled-action lifecycle are separate concepts.
-
-For example:
 
 ```text
 Reconciliation State
@@ -1049,35 +1286,17 @@ Exception Lifecycle
 Controlled Action Status
 ```
 
-This prevents operational workflow completion from being mistaken for financial resolution.
-
----
-
 ### Human-in-the-Loop Control
 
 Unresolved financial exceptions remain subject to human review and explicit resolution.
-
-The system assists operators rather than silently replacing financial-control decisions with autonomous AI behavior.
-
----
 
 ### Auditability
 
 Important operational actions and rejected action attempts produce audit records.
 
-The system should be able to answer:
+### Deterministic Operational Risk
 
-```text
-What happened?
-Why did it happen?
-Which action was requested?
-Was it permitted?
-Did it execute?
-What was the result?
-Was the exception ultimately resolved?
-```
-
----
+Risk queue attention classification and ordering are deterministic and derived from existing system state.
 
 ### Incremental Evolution
 
@@ -1093,13 +1312,14 @@ Phase 2 → Settlement Ingestion
 Phase 3 → Reconciliation Engine
 Phase 4 → Exception Intelligence + AI + Controller
 Phase 5 → Controlled Remediation + Auditability
+Phase 6 → Operational Control + Risk
 ```
 
 Future phases should extend this architecture rather than bypass its existing financial and control boundaries.
 
 ---
 
-## 24. Current Architectural State
+## 29. Current Architectural State
 
 The architecture has progressed from a basic transaction and settlement data layer into a complete financial-control pipeline:
 
@@ -1132,6 +1352,12 @@ The architecture has progressed from a basic transaction and settlement data lay
                        │
                        ▼
               HUMAN RESOLUTION
+                       │
+                       ▼
+          OPERATIONAL CONTROL + RISK
+                       │
+                       ▼
+             CONTROL DASHBOARD
 ```
 
 The central design philosophy is:

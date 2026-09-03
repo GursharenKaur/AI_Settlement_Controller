@@ -17,3 +17,4 @@ class OperationalRiskItem(BaseModel):
     recommended_action: ControllerAction
     human_review_required: bool
     remediation_status: str
+    attention_status: str

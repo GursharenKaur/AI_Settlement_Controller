@@ -62,3 +62,13 @@ class ControlledAction(Base):
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
     )
+
+    result: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    executed_at: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )

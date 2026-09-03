@@ -5,6 +5,7 @@ from app.core.api.routes.settlements import router as settlements_router
 from app.core.api.routes.transactions import router as transactions_router
 from app.core.api.routes.reconciliation import router as reconciliation_router
 from app.core.api.routes import exceptions
+from app.core.api.routes.controlled_actions import router as controlled_actions_router
 
 app = FastAPI(
     title="AI Settlement Controller",
@@ -18,6 +19,7 @@ app.include_router(settlements_router)
 app.include_router(ingestion_router)
 app.include_router(reconciliation_router)
 app.include_router(exceptions.router)
+app.include_router(controlled_actions_router)
 
 @app.get("/health")
 def health_check():

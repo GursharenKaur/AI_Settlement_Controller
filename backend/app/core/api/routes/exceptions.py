@@ -14,7 +14,12 @@ from app.services.ai_portfolio_context import build_portfolio_ai_context
 from app.schemas.ai_portfolio_analysis import AIPortfolioAnalysis
 from app.models.exception import ExceptionLifecycleStatus
 from app.schemas.exception_lifecycle import ExceptionLifecycleResponse
-from app.services.exception_lifecycle import get_or_create_exception_record
+
+from app.services.exception_lifecycle import (
+    get_controlled_actions_for_exception,
+    get_or_create_exception_record,
+)
+
 from app.schemas.controller_decision import ControllerDecision
 from app.services.controller_decision import build_controller_decision
 
@@ -57,7 +62,18 @@ def acknowledge_exception(
         db.commit()
         db.refresh(record)
 
-    return record
+        controlled_actions = get_controlled_actions_for_exception(
+            db=db,
+            payment_id=payment_id,
+        )
+
+        return {
+            "payment_id": record.payment_id,
+            "status": record.status,
+            "created_at": record.created_at,
+            "updated_at": record.updated_at,
+            "controlled_actions": controlled_actions,
+        }
 
 
 @router.post(
@@ -75,7 +91,18 @@ def resolve_exception(
         db.commit()
         db.refresh(record)
 
-    return record
+        controlled_actions = get_controlled_actions_for_exception(
+            db=db,
+            payment_id=payment_id,
+        )
+
+        return {
+            "payment_id": record.payment_id,
+            "status": record.status,
+            "created_at": record.created_at,
+            "updated_at": record.updated_at,
+            "controlled_actions": controlled_actions,
+        }
 
 @router.get(
     "/{payment_id}/lifecycle",
@@ -85,7 +112,24 @@ def get_exception_lifecycle(
     payment_id: str,
     db: Session = Depends(get_db),
 ):
-    return get_or_create_exception_record(db, payment_id)
+
+    record = get_or_create_exception_record(
+        db=db,
+        payment_id=payment_id,
+    )
+
+    controlled_actions = get_controlled_actions_for_exception(
+        db=db,
+        payment_id=payment_id,
+    )
+
+    return {
+        "payment_id": record.payment_id,
+        "status": record.status,
+        "created_at": record.created_at,
+        "updated_at": record.updated_at,
+        "controlled_actions": controlled_actions,
+    }
 
 @router.get(
     "/{payment_id}/decision",

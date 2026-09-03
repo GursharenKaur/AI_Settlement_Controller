@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.models.controlled_action import ControlledAction
 from app.models.exception import (
     ExceptionLifecycleStatus,
     ExceptionRecord,
@@ -35,3 +36,20 @@ def get_or_create_exception_record(
     db.refresh(record)
 
     return record
+
+
+def get_controlled_actions_for_exception(
+    db: Session,
+    payment_id: str,
+) -> list[ControlledAction]:
+    """
+    Return all controlled remediation actions associated
+    with the exception's payment.
+    """
+
+    return (
+        db.query(ControlledAction)
+        .filter(ControlledAction.payment_id == payment_id)
+        .order_by(ControlledAction.id)
+        .all()
+    )

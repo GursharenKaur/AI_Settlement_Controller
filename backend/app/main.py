@@ -8,7 +8,7 @@ from app.core.api.routes import exceptions
 from app.core.api.routes.controlled_actions import router as controlled_actions_router
 from app.core.api.routes.operational_control import router as operational_control_router
 from app.core.api.routes.operational_risk import router as operational_risk_router
-
+from app.core.api.routes.intelligence import router as intelligence_router
 
 app = FastAPI(
     title="AI Settlement Controller",
@@ -24,6 +24,7 @@ app.include_router(exceptions.router)
 app.include_router(controlled_actions_router)
 app.include_router(operational_control_router)
 app.include_router(operational_risk_router)
+app.include_router(intelligence_router)
 
 
 @app.get("/health")

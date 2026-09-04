@@ -3,7 +3,6 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, Integer, String, Text
-
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -52,4 +51,14 @@ class AuditLog(Base):
         DateTime,
         nullable=False,
         default=datetime.utcnow,
+    )
+
+    previous_status: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
+
+    new_status: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
     )

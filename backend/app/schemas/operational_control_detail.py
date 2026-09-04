@@ -37,6 +37,8 @@ class OperationalControlAuditEvent(BaseModel):
     controlled_action_id: int | None
     event_type: AuditEventType
     message: str
+    previous_status: str | None
+    new_status: str | None
     created_at: datetime
 
     model_config = {

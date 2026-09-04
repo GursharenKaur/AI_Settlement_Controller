@@ -9,9 +9,14 @@ def create_audit_log(
     event_type: AuditEventType,
     message: str,
     controlled_action_id: int | None = None,
+    previous_status: str | None = None,
+    new_status: str | None = None,
 ) -> AuditLog:
     """
     Create and persist an immutable operational audit event.
+
+    State-transition evidence is recorded when applicable.
+    The audit log does not modify financial records or control state.
     """
 
     audit_log = AuditLog(
@@ -19,6 +24,8 @@ def create_audit_log(
         controlled_action_id=controlled_action_id,
         event_type=event_type,
         message=message,
+        previous_status=previous_status,
+        new_status=new_status,
     )
 
     db.add(audit_log)

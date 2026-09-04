@@ -41,6 +41,8 @@ def start_controlled_action(
             f"Controlled action {action.id} started execution "
             f"for action type '{action.action_type.value}'."
         ),
+        previous_status=ControlledActionStatus.REQUESTED.value,
+        new_status=ControlledActionStatus.IN_PROGRESS.value,
     )
 
     return action
@@ -78,6 +80,8 @@ def complete_controlled_action(
         message=(
             f"Controlled action {action.id} completed successfully."
         ),
+        previous_status=ControlledActionStatus.IN_PROGRESS.value,
+        new_status=ControlledActionStatus.COMPLETED.value,
     )
 
     return action

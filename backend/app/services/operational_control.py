@@ -15,6 +15,9 @@ from app.services.reconciliation import reconcile_payment
 from decimal import Decimal
 from app.services.exception_aging import calculate_exception_age
 
+from app.services.governance import classify_governance
+from app.schemas.governance import GovernanceClassificationResponse
+
 def get_operational_exception_control(
     db: Session,
     payment_id: str,
@@ -102,7 +105,15 @@ def get_operational_exception_control(
         remediation_status = "REJECTED"
     else:
         remediation_status = "REQUESTED"
-
+    
+    governance = classify_governance(
+        lifecycle_status=assessment.lifecycle_status,
+        remediation_status=remediation_status,
+        aging_band=aging_band,
+        priority_score=assessment.priority_score,
+        human_review_required=decision.human_review_required,
+    )
+    
     return OperationalExceptionControl(
         payment_id=assessment.payment_id,
         category=assessment.category,
@@ -117,6 +128,11 @@ def get_operational_exception_control(
         age_minutes=age_minutes,
         age_hours=age_hours,
         aging_band=aging_band,
+        governance=GovernanceClassificationResponse(
+            governance_level=governance.governance_level,
+            escalation_required=governance.escalation_required,
+            governance_reason=governance.governance_reason,
+        ),
     )
 
 

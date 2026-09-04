@@ -14,6 +14,7 @@ from app.schemas.exception import (
     ExceptionSeverity,
 )
 
+from app.schemas.governance import GovernanceClassificationResponse
 
 class OperationalControlledAction(BaseModel):
     id: int
@@ -43,6 +44,8 @@ class OperationalExceptionControl(BaseModel):
     human_review_required: bool
     controlled_actions: list[OperationalControlledAction]
     remediation_status: str
+
+    governance: GovernanceClassificationResponse
 
 
 class OperationalControlSummary(BaseModel):

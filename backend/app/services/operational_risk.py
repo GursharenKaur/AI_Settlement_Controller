@@ -93,6 +93,7 @@ def get_operational_risk_queue(
             human_review_required=control.human_review_required,
             remediation_status=control.remediation_status,
             attention_status=classify_attention_status(control),
+            governance=control.governance,
         )
         for control in controls
     ]

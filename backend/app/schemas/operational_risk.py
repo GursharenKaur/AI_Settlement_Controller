@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from app.models.exception import ExceptionLifecycleStatus
 from app.schemas.controller_decision import ControllerAction
 from app.schemas.exception import ExceptionCategory, ExceptionSeverity
-
+from app.schemas.governance import GovernanceClassificationResponse
 
 class OperationalRiskItem(BaseModel):
     payment_id: str
@@ -21,6 +21,7 @@ class OperationalRiskItem(BaseModel):
     human_review_required: bool
     remediation_status: str
     attention_status: str
+    governance: GovernanceClassificationResponse
 
 class OperationalRiskSummary(BaseModel):
     total_exceptions: int

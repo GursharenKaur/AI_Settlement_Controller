@@ -7,6 +7,9 @@ from app.services.gemini_client import client
 
 MODEL_NAME = "gemini-2.5-flash"
 
+class AIInvestigationError(Exception):
+    """Raised when AI investigation generation fails."""
+
 
 def generate_investigation_analysis(
     context: AIInvestigationContext,
@@ -130,13 +133,19 @@ pattern among historical transactions excluding the current payment.
 Do not infer per-payment recurrence.
 """
 
-    response = client.models.generate_content(
-        model=MODEL_NAME,
-        contents=prompt,
-        config={
-            "response_mime_type": "application/json",
-            "response_schema": AIInvestigationAnalysis,
-        },
-    )
+    try:
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=prompt,
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": AIInvestigationAnalysis,
+            },
+        )
 
-    return AIInvestigationAnalysis.model_validate_json(response.text)
+        return AIInvestigationAnalysis.model_validate_json(response.text)
+
+    except Exception as exc:
+        raise AIInvestigationError(
+            "AI investigation generation failed"
+        ) from exc

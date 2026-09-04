@@ -13,7 +13,10 @@ from app.schemas.pattern_intelligence import PatternIntelligenceResponse
 from app.services.pattern_intelligence import get_exception_patterns
 
 from app.schemas.ai_investigation import AIInvestigationAnalysis
-from app.services.ai_investigation import generate_investigation_analysis
+from app.services.ai_investigation import (
+    AIInvestigationError,
+    generate_investigation_analysis,
+)
 from app.services.ai_investigation_context import build_ai_investigation_context
 
 router = APIRouter(
@@ -63,4 +66,10 @@ def get_exception_investigation(
             detail=str(exc),
         ) from exc
 
-    return generate_investigation_analysis(context)
+    try:
+        return generate_investigation_analysis(context)
+    except AIInvestigationError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="AI investigation service is temporarily unavailable",
+        ) from exc

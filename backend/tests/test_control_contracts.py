@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
+from app.services import ai_investigation
 
 client = TestClient(app, raise_server_exceptions=False)
 
@@ -224,3 +225,33 @@ def test_controlled_action_rejects_oversized_payment_id():
     )
 
     assert response.status_code == 422
+
+def test_ai_investigation_failure_returns_503(monkeypatch):
+    def failing_analysis(context):
+        raise ai_investigation.AIInvestigationError(
+            "simulated AI failure"
+        )
+
+    monkeypatch.setattr(
+        "app.core.api.routes.intelligence.generate_investigation_analysis",
+        failing_analysis,
+    )
+
+    response = client.get(
+        "/intelligence/exceptions/2/investigation"
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "AI investigation service is temporarily unavailable"
+    }
+
+def test_request_logging_records_http_metadata(caplog):
+    with caplog.at_level("INFO"):
+        response = client.get("/health")
+
+    assert response.status_code == 200
+    assert any(
+        "HTTP request: GET /health -> 200" in record.message
+        for record in caplog.records
+    )

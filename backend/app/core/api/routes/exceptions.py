@@ -25,6 +25,9 @@ from app.services.controller_decision import build_controller_decision
 from datetime import datetime, timezone
 from app.schemas.resolution import ExceptionResolutionRequest
 
+from app.models.audit_log import AuditEventType
+from app.services.audit_log import create_audit_log
+
 router = APIRouter(
     prefix="/exceptions",
     tags=["Exceptions"],
@@ -83,6 +86,15 @@ def acknowledge_exception(
     db.commit()
     db.refresh(record)
 
+    create_audit_log(
+        db=db,
+        payment_id=payment_id,
+        event_type=AuditEventType.EXCEPTION_ACKNOWLEDGED,
+        message="Exception lifecycle acknowledged by human operator.",
+        previous_status=ExceptionLifecycleStatus.OPEN.value,
+        new_status=ExceptionLifecycleStatus.ACKNOWLEDGED.value,
+    )
+
     controlled_actions = get_controlled_actions_for_exception(
         db=db,
         payment_id=payment_id,
@@ -98,7 +110,6 @@ def acknowledge_exception(
         "resolved_at": record.resolved_at,
         "controlled_actions": controlled_actions,
     }
-
 
 @router.post(
     "/{payment_id}/resolve",
@@ -137,6 +148,19 @@ def resolve_exception(
 
     db.commit()
     db.refresh(record)
+
+    create_audit_log(
+        db=db,
+        payment_id=payment_id,
+        event_type=AuditEventType.EXCEPTION_RESOLVED,
+        message=(
+            "Exception lifecycle resolved by human operator. "
+            f"Resolution reason: {request.resolution_reason.value}."
+        ),
+        previous_status=ExceptionLifecycleStatus.ACKNOWLEDGED.value,
+        new_status=ExceptionLifecycleStatus.RESOLVED.value,
+    )
+
 
     controlled_actions = get_controlled_actions_for_exception(
         db=db,

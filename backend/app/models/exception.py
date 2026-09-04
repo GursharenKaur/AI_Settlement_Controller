@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, Enum as SQLEnum, String
+from sqlalchemy import DateTime, Enum as SQLEnum, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -42,4 +42,19 @@ class ExceptionRecord(Base):
         nullable=False,
         default=datetime.utcnow,
         onupdate=datetime.utcnow,
+    )
+
+    resolution_reason: Mapped[str | None] = mapped_column(
+        String(50),
+        nullable=True,
+    )
+
+    resolution_note: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    resolved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )

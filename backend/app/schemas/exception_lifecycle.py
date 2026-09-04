@@ -26,6 +26,11 @@ class ExceptionLifecycleResponse(BaseModel):
     status: ExceptionLifecycleStatus
     created_at: datetime
     updated_at: datetime
+
+    resolution_reason: str | None
+    resolution_note: str | None
+    resolved_at: datetime | None
+
     controlled_actions: list[ControlledActionLifecycleItem] = []
 
     model_config = {

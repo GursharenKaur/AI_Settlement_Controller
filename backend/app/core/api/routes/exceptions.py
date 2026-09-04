@@ -22,6 +22,8 @@ from app.services.exception_lifecycle import (
 
 from app.schemas.controller_decision import ControllerDecision
 from app.services.controller_decision import build_controller_decision
+from datetime import datetime, timezone
+from app.schemas.resolution import ExceptionResolutionRequest
 
 router = APIRouter(
     prefix="/exceptions",
@@ -91,6 +93,9 @@ def acknowledge_exception(
         "status": record.status,
         "created_at": record.created_at,
         "updated_at": record.updated_at,
+        "resolution_reason": record.resolution_reason,
+        "resolution_note": record.resolution_note,
+        "resolved_at": record.resolved_at,
         "controlled_actions": controlled_actions,
     }
 
@@ -101,6 +106,7 @@ def acknowledge_exception(
 )
 def resolve_exception(
     payment_id: str,
+    request: ExceptionResolutionRequest,
     db: Session = Depends(get_db),
 ):
     record = get_exception_record(
@@ -125,6 +131,9 @@ def resolve_exception(
         )
 
     record.status = ExceptionLifecycleStatus.RESOLVED
+    record.resolution_reason = request.resolution_reason.value
+    record.resolution_note = request.resolution_note
+    record.resolved_at = datetime.now(timezone.utc)
 
     db.commit()
     db.refresh(record)
@@ -139,6 +148,9 @@ def resolve_exception(
         "status": record.status,
         "created_at": record.created_at,
         "updated_at": record.updated_at,
+        "resolution_reason": record.resolution_reason,
+        "resolution_note": record.resolution_note,
+        "resolved_at": record.resolved_at,
         "controlled_actions": controlled_actions,
     }
 
@@ -172,6 +184,9 @@ def get_exception_lifecycle(
         "status": record.status,
         "created_at": record.created_at,
         "updated_at": record.updated_at,
+        "resolution_reason": record.resolution_reason,
+        "resolution_note": record.resolution_note,
+        "resolved_at": record.resolved_at,
         "controlled_actions": controlled_actions,
     }
 

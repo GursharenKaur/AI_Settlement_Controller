@@ -9,6 +9,8 @@ from app.services.historical_intelligence import (
     get_historical_exception_context,
 )
 
+from app.schemas.pattern_intelligence import PatternIntelligenceResponse
+from app.services.pattern_intelligence import get_exception_patterns
 
 router = APIRouter(
     prefix="/intelligence",
@@ -28,3 +30,12 @@ def get_exception_intelligence(
         db=db,
         payment_id=payment_id,
     )
+
+@router.get(
+    "/patterns",
+    response_model=PatternIntelligenceResponse,
+)
+def get_patterns(
+    db: Session = Depends(get_db),
+):
+    return get_exception_patterns(db=db)

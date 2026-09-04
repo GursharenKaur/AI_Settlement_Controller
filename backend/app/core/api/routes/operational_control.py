@@ -16,7 +16,9 @@ from app.schemas.operational_control import OperationalControlSummary
 
 from app.services.operational_control import (
     get_operational_control_summary,
+    get_governed_operational_controls
 )
+
 
 router = APIRouter(
     prefix="/control",
@@ -108,3 +110,18 @@ def get_operational_control_summary_endpoint(
     db: Session = Depends(get_db),
 ):
     return get_operational_control_summary(db)
+
+@router.get(
+    "/governance",
+    response_model=list[OperationalExceptionControl],
+)
+def get_governance_queue(
+    db: Session = Depends(get_db),
+) -> list[OperationalExceptionControl]:
+    """
+    Return the current exceptions requiring governance escalation.
+
+    Read-only operational view. No financial, lifecycle, remediation,
+    or audit state is mutated.
+    """
+    return get_governed_operational_controls(db)

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-
+from decimal import Decimal
 from app.models.exception import ExceptionRecord
 from app.schemas.operational_control import (
     OperationalControlledAction,
@@ -260,3 +260,42 @@ def get_operational_control_summary(
 
         outstanding_control_count=outstanding_control_count,
     )
+
+def get_governed_operational_controls(db: Session) -> list[OperationalExceptionControl]:
+    """
+    Return only operational exceptions that currently require governance
+    escalation.
+
+    This is a read-only, deterministic view derived from the existing
+    operational control state. It does not mutate financial records,
+    exception lifecycle state, controlled actions, or audit logs.
+    """
+    controls = get_operational_exception_controls(db)
+
+    governance_rank = {
+        "CRITICAL": 4,
+        "HIGH": 3,
+        "ELEVATED": 2,
+        "NORMAL": 1,
+    }
+
+    governed_controls = [
+        control
+        for control in controls
+        if control.governance.escalation_required
+    ]
+
+    governed_controls.sort(
+        key=lambda control: (
+            governance_rank.get(control.governance.governance_level, 0),
+            control.priority_score,
+            (
+                control.financial_impact
+                if control.financial_impact is not None
+                else Decimal("0")
+            ),
+        ),
+        reverse=True,
+    )
+
+    return governed_controls

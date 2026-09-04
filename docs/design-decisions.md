@@ -10,6 +10,8 @@ The project follows a core principle:
 
 ---
 
+# Foundation Decisions
+
 ## DD-001 — Deterministic Reconciliation Before AI
 
 **Decision:** Build deterministic reconciliation before introducing AI-based analysis.
@@ -18,13 +20,7 @@ The project follows a core principle:
 
 Financial reconciliation is fundamentally a correctness problem.
 
-The system must first establish facts such as expected payment amount, actual settlement amount, settlement existence, currency compatibility, transaction/settlement state compatibility, and amount differences.
-
-These facts should be derived deterministically.
-
 ### Consequence
-
-The system follows:
 
 ```text
 Financial Data
@@ -67,8 +63,6 @@ and application-level `Decimal`.
 A payment transaction and its settlement are different financial events.
 
 ### Consequence
-
-Reconciliation happens across the two datasets rather than treating them as one record.
 
 ```text
 Transaction
@@ -159,8 +153,6 @@ duplicate
 failed
 ```
 
-Valid records continue while invalid records remain visible for correction.
-
 ---
 
 ## DD-008 — Keep Ingestion Processing Outside API Routes
@@ -195,20 +187,6 @@ Audit Logging
 
 The project needs a reproducible and version-controlled database schema.
 
-### Consequence
-
-Schema changes follow:
-
-```text
-Model Change
-     ↓
-Alembic Migration
-     ↓
-Database Upgrade
-     ↓
-Schema Verification
-```
-
 ---
 
 ## DD-010 — Complete Core Features Before Advanced Enhancements
@@ -237,10 +215,6 @@ Advanced Improvements
 
 **Decision:** The deterministic financial layer must not depend on the specific AI implementation.
 
-### Rationale
-
-AI providers and models may evolve.
-
 ### Consequence
 
 ```text
@@ -262,10 +236,6 @@ AI Analysis
 ### Rationale
 
 The project contains multiple interacting layers.
-
-### Consequence
-
-Important changes are verified through imports, schema validation, API/OpenAPI inspection, database inspection, migration checks, API requests, and end-to-end workflow checks.
 
 ---
 
@@ -298,10 +268,6 @@ OVER_SETTLED
 ## DD-014 — Reconciliation Rules Remain Deterministic
 
 **Decision:** Reconciliation classifications are determined by explicit application rules rather than AI.
-
-### Consequence
-
-The reconciliation layer evaluates settlement existence, amount equality/difference, currency equality, and transaction/settlement state.
 
 ---
 
@@ -409,10 +375,6 @@ Explanation / Recommendation
 
 **Decision:** AI analysis must preserve deterministic financial impact and explicitly acknowledge unknown exposure.
 
-### Consequence
-
-AI must use known financial impact when provided, must not independently invent monetary values, and must explicitly state when exposure cannot safely be quantified.
-
 ---
 
 ## DD-022 — AI Recommends; Deterministic Logic Controls
@@ -437,21 +399,6 @@ Allowed Action
 
 **Decision:** Operational remediation must pass through a dedicated controlled-action layer.
 
-### Consequence
-
-Controlled actions are persisted with:
-
-```text
-payment_id
-action_type
-status
-reason
-result
-created_at
-updated_at
-executed_at
-```
-
 ---
 
 ## DD-024 — Only Explicitly Allowed Actions Can Execute
@@ -468,8 +415,6 @@ CURRENCY_MISMATCH  → REVIEW_CURRENCY_MISMATCH
 INVALID_STATE      → INVESTIGATE_INVALID_STATE
 ```
 
-Invalid combinations are rejected.
-
 ---
 
 ## DD-025 — Controlled Actions Have Their Own Lifecycle
@@ -478,22 +423,12 @@ Invalid combinations are rejected.
 
 ### Consequence
 
-Controlled actions use:
-
 ```text
 REQUESTED
 IN_PROGRESS
 COMPLETED
 FAILED
 REJECTED
-```
-
-while exceptions separately use:
-
-```text
-OPEN
-ACKNOWLEDGED
-RESOLVED
 ```
 
 ---
@@ -514,31 +449,11 @@ Exception
 
 can be valid.
 
-Resolution requires an explicit lifecycle transition.
-
 ---
 
 ## DD-027 — Controlled Remediation Does Not Directly Modify Financial Records
 
 **Decision:** Current controlled remediation actions are operational investigation/review actions rather than arbitrary financial mutations.
-
-### Consequence
-
-Current remediation focuses on:
-
-```text
-Investigate
-Review
-```
-
-rather than:
-
-```text
-Change settlement amount
-Move money
-Modify transaction amount
-Modify financial records
-```
 
 ---
 
@@ -546,35 +461,11 @@ Modify financial records
 
 **Decision:** Unresolved financial exceptions remain subject to human review and explicit resolution.
 
-### Consequence
-
-```text
-AI Analysis
-      ↓
-Controller Decision
-      ↓
-Controlled Action
-      ↓
-Human Review
-      ↓
-Explicit Resolution
-```
-
 ---
 
 ## DD-029 — Audit Both Successful and Rejected Actions
 
 **Decision:** Controlled action creation, execution, completion, failure, and rejection should be represented in the audit trail.
-
-### Consequence
-
-```text
-CONTROLLED_ACTION_CREATED
-CONTROLLED_ACTION_STARTED
-CONTROLLED_ACTION_COMPLETED
-CONTROLLED_ACTION_FAILED
-CONTROLLED_ACTION_REJECTED
-```
 
 ---
 
@@ -582,27 +473,11 @@ CONTROLLED_ACTION_REJECTED
 
 **Decision:** Audit logs are stored separately from controlled-action state.
 
-### Consequence
-
-Controlled actions maintain current operational state, while audit logs preserve historical events.
-
 ---
 
 ## DD-031 — Preserve the Underlying Financial Record During Controlled Remediation
 
 **Decision:** Controlled remediation must not silently change underlying transaction or settlement financial data.
-
-### Consequence
-
-The system preserves:
-
-```text
-Transaction Data
-Settlement Data
-Reconciliation Result
-```
-
-while tracking remediation separately through controlled actions, exception lifecycle, and audit logs.
 
 ---
 
@@ -633,55 +508,17 @@ Audit History
 
 **Decision:** Important operational transitions should be explicit and controlled.
 
-### Consequence
-
-```text
-OPEN
-  ↓
-ACKNOWLEDGED
-  ↓
-RESOLVED
-```
-
-and controlled actions follow their own execution lifecycle.
-
 ---
 
 ## DD-034 — Preserve Uncertainty Instead of Fabricating Certainty
 
 **Decision:** When the system cannot safely determine a financial value or operational conclusion, it should preserve the uncertainty.
 
-### Consequence
-
-```text
-financial_impact = unknown / None
-```
-
-is valid when source data is insufficient.
-
 ---
 
 ## DD-035 — The Controller Is the Operational Safety Boundary
 
 **Decision:** The deterministic controller and controlled-action validation layer form the authorization boundary between intelligence and execution.
-
-### Consequence
-
-```text
-Trusted Financial Context
-        ↓
-AI Analysis
-        ↓
-Controller Decision
-        ↓
-Action Validation
-        ↓
-Controlled Execution
-        ↓
-Audit
-        ↓
-Human Resolution
-```
 
 ---
 
@@ -713,28 +550,6 @@ Audit
 
 **Decision:** Future phases should extend the existing control architecture rather than bypassing it.
 
-### Consequence
-
-New AI capabilities, automation, dashboards, or operational workflows should integrate through:
-
-```text
-Transaction / Settlement Data
-          ↓
-Reconciliation
-          ↓
-Exception Intelligence
-          ↓
-Financial Impact / Priority
-          ↓
-AI Analysis
-          ↓
-Controller
-          ↓
-Controlled Action
-          ↓
-Audit
-```
-
 ---
 
 # Phase 6 — Operational Control and Risk Decisions
@@ -743,62 +558,11 @@ Audit
 
 **Decision:** The operational control layer derives a read-only representation of existing financial and operational state.
 
-### Rationale
-
-Operational users need a consolidated view of settlement exceptions, remediation progress, audit history, and risk without allowing dashboard or monitoring APIs to mutate the underlying system.
-
-Creating a separate operational processing path could risk duplicating financial logic and introducing inconsistent state.
-
-### Consequence
-
-Operational control APIs consume:
-
-```text
-Reconciliation
-Exception Intelligence
-Priority
-Lifecycle
-Controller Decision
-Controlled Actions
-Audit History
-```
-
-and expose a derived operational representation.
-
-They do not:
-
-```text
-Modify financial records
-Execute actions
-Resolve exceptions
-Create audit events
-Invoke AI
-```
-
 ---
 
 ## DD-039 — Operational Risk Must Reuse Existing Deterministic Risk State
 
 **Decision:** The operational risk queue must consume existing deterministic exception, financial-impact, and priority results rather than independently recalculating them.
-
-### Rationale
-
-Duplicating financial-impact or priority calculations in the operational layer could create conflicting interpretations of the same exception.
-
-### Consequence
-
-The operational risk layer derives its queue from the existing operational control representation.
-
-It does not create a second financial-impact calculation or alternative priority algorithm.
-
-This preserves consistency between:
-
-```text
-Exception Intelligence
-Risk Queue
-Risk Summary
-Control Summary
-```
 
 ---
 
@@ -806,13 +570,7 @@ Control Summary
 
 **Decision:** Operational attention should be represented using explicit deterministic states.
 
-### Rationale
-
-A dashboard should not need to infer operational urgency from several independent fields.
-
 ### Consequence
-
-The system uses:
 
 ```text
 ACTION_REQUIRED
@@ -822,36 +580,18 @@ MONITOR
 NO_ACTION_REQUIRED
 ```
 
-The classification is deterministic and considers lifecycle state, remediation state, and human-review requirements.
-
 ---
 
 ## DD-041 — Risk Queue Ordering Must Be Deterministic
 
 **Decision:** Operational risk ordering must be deterministic and explainable.
 
-### Rationale
-
-Operational users need predictable queue behavior.
-
 ### Consequence
-
-The queue is ordered by:
 
 ```text
 1. Attention rank
 2. Priority score
 3. Known financial impact
-```
-
-Attention rank is:
-
-```text
-ACTION_REQUIRED = 5
-IN_PROGRESS = 4
-HUMAN_RESOLUTION_REQUIRED = 3
-MONITOR = 2
-NO_ACTION_REQUIRED = 1
 ```
 
 ---
@@ -860,64 +600,11 @@ NO_ACTION_REQUIRED = 1
 
 **Decision:** An exception with no persisted lifecycle record must still be eligible for operational attention.
 
-### Rationale
-
-A newly identified exception may exist before a lifecycle record has been persisted.
-
-Treating a null lifecycle as equivalent to "no action required" could hide a genuine financial exception.
-
-### Consequence
-
-If:
-
-```text
-lifecycle_status = null
-```
-
-but:
-
-```text
-human_review_required = true
-```
-
-the operational risk state can still be:
-
-```text
-ACTION_REQUIRED
-```
-
 ---
 
 ## DD-043 — Operational Detail Must Not Become an Execution Endpoint
 
 **Decision:** Operational detail and dashboard APIs must remain strictly read-only.
-
-### Rationale
-
-A monitoring or dashboard request should never unexpectedly trigger remediation, lifecycle transitions, financial mutation, or audit side effects.
-
-### Consequence
-
-The operational detail layer can:
-
-```text
-Read
-Reconcile
-Assess
-Aggregate
-Correlate
-```
-
-but cannot:
-
-```text
-Execute
-Resolve
-Mutate
-Audit
-```
-
-Execution remains exclusively behind the controlled-action execution workflow.
 
 ---
 
@@ -925,44 +612,471 @@ Execution remains exclusively behind the controlled-action execution workflow.
 
 **Decision:** The operational control layer should evolve the system from exception detection and remediation into an operational financial-control platform.
 
+---
+
+# Phase 7 — Governance and Operational Resilience Decisions
+
+## DD-045 — Enforce Explicit Operational State Transitions
+
+**Decision:** Exception lifecycle and controlled-action state transitions must be explicitly validated.
+
 ### Rationale
 
-A settlement controller is valuable not only because it can identify discrepancies, but because it can help operations determine:
-
-```text
-What requires attention?
-What is the financial exposure?
-What is the priority?
-What action is permitted?
-What remediation has occurred?
-What remains unresolved?
-What audit history exists?
-What should operations focus on next?
-```
+Operational state must not change through arbitrary status assignment.
 
 ### Consequence
 
-The architecture evolves as:
+Illegal transitions are rejected deterministically.
+
+The system preserves explicit state-machine semantics rather than relying on callers to behave correctly.
+
+---
+
+## DD-046 — Base Exception Aging on Authoritative Creation Time
+
+**Decision:** Exception aging is calculated from the authoritative `ExceptionRecord.created_at`.
+
+### Rationale
+
+Operational aging should measure how long the persisted exception has existed, rather than relying on mutable or unrelated timestamps.
+
+### Consequence
 
 ```text
-Detect
-   ↓
-Understand
-   ↓
-Prioritize
-   ↓
-Recommend
-   ↓
-Control
-   ↓
-Execute Safely
-   ↓
-Audit
-   ↓
-Resolve Explicitly
+0h <= age < 1h   → FRESH
+1h <= age < 4h   → AGING
+4h <= age < 24h  → ATTENTION
+age >= 24h       → OVERDUE
 ```
 
-The operational control layer becomes the bridge between the underlying financial-control engine and an eventual operational dashboard or control center.
+Unknown age is not treated as overdue.
+
+---
+
+## DD-047 — Keep Governance Deterministic and Separate from AI
+
+**Decision:** Governance level and escalation state are derived deterministically from exception, lifecycle, remediation, aging, and priority state.
+
+### Rationale
+
+Escalation is an operational-control decision and should remain predictable and explainable.
+
+### Consequence
+
+AI cannot change governance level or escalation status.
+
+---
+
+## DD-048 — Preserve Historical Audit Records
+
+**Decision:** Strengthening audit schemas must not require rewriting historical audit records.
+
+### Rationale
+
+Historical evidence should remain historically faithful.
+
+### Consequence
+
+New transition evidence applies to relevant new events, while older records remain preserved.
+
+---
+
+# Phase 8 — Human Operations and Resolution Decisions
+
+## DD-049 — Human Resolution Is a Separate Lifecycle from Controlled Remediation
+
+**Decision:** Human resolution is distinct from controlled-action completion.
+
+### Rationale
+
+An investigation/review can finish without proving that the underlying exception is resolved.
+
+### Consequence
+
+```text
+Controlled Action
+    → COMPLETED
+
+Exception
+    → OPEN / ACKNOWLEDGED
+```
+
+can be valid until a human explicitly resolves the exception.
+
+---
+
+## DD-050 — Exception Resolution Requires Explicit Metadata
+
+**Decision:** Resolving an exception requires a structured resolution reason and a non-empty resolution note.
+
+### Rationale
+
+A resolved financial exception should contain enough evidence to explain why the resolution occurred.
+
+### Consequence
+
+Resolution persists:
+
+```text
+resolution_reason
+resolution_note
+resolved_at
+```
+
+Supported reasons are:
+
+```text
+SETTLEMENT_CONFIRMED
+MANUAL_RECONCILIATION
+FALSE_POSITIVE
+DUPLICATE_EXCEPTION
+OTHER
+```
+
+---
+
+## DD-051 — Human Lifecycle Transitions Must Be Audited
+
+**Decision:** Acknowledgement and resolution transitions create explicit audit events.
+
+### Consequence
+
+```text
+EXCEPTION_ACKNOWLEDGED
+EXCEPTION_RESOLVED
+```
+
+Human lifecycle events are auditable independently of controlled actions.
+
+---
+
+## DD-052 — Human Resolution Cannot Bypass the State Machine
+
+**Decision:** A resolution request is valid only from the appropriate lifecycle state.
+
+### Consequence
+
+```text
+OPEN → ACKNOWLEDGED → RESOLVED
+```
+
+is valid, while invalid transitions are rejected without mutating the record.
+
+---
+
+# Phase 9 — Advanced Settlement Intelligence Decisions
+
+## DD-053 — Historical Intelligence Must Reuse Deterministic Financial Assessment
+
+**Decision:** Historical exception intelligence must derive from the existing transaction, settlement, reconciliation, and exception-assessment pipeline.
+
+### Rationale
+
+Historical analysis must use the same financial truth rules as current analysis.
+
+### Consequence
+
+Historical intelligence does not create an independent exception classifier.
+
+---
+
+## DD-054 — Historical Analysis Must Exclude the Current Payment
+
+**Decision:** When analyzing historical context for a payment, the current payment is excluded from the historical comparison population.
+
+### Rationale
+
+Including the current payment would contaminate the historical baseline and could falsely inflate recurrence or timing evidence.
+
+---
+
+## DD-055 — ExceptionRecord Is Operational Lifecycle State, Not Historical Event History
+
+**Decision:** The persisted exception lifecycle record is not treated as a historical exception-event log.
+
+### Rationale
+
+There is one operational lifecycle representation per payment, while historical intelligence must reason over financial transaction/settlement records and deterministic assessments.
+
+### Consequence
+
+Historical intelligence does not require redesigning `ExceptionRecord` into an event-history table.
+
+---
+
+## DD-056 — Recurrence Signals Must Be Explicit and Deterministic
+
+**Decision:** Recurrence is represented through explicit population signals rather than opaque probability scores.
+
+### Consequence
+
+The system exposes signals such as:
+
+```text
+same_category_exception_count
+same_currency_exception_count
+same_category_and_currency_exception_count
+recurrence_detected
+```
+
+These signals are evidence, not probabilistic risk predictions.
+
+---
+
+## DD-057 — Recurrence Must Preserve Population-Level Semantics
+
+**Decision:** Population-level recurrence must not be described as proof that the current payment itself previously experienced the same exception.
+
+### Rationale
+
+A broader population pattern and a payment's own history are different claims.
+
+### Consequence
+
+AI and API semantics must preserve the distinction between:
+
+```text
+Current Payment
+        versus
+Historical Population
+```
+
+---
+
+## DD-058 — Settlement Timing Is Contextual Evidence
+
+**Decision:** Settlement timing deviation is provided as contextual evidence rather than being converted into an automatic risk or priority decision.
+
+### Consequence
+
+The system exposes:
+
+```text
+timing_available
+settlement_delay_hours
+historical_settlement_count
+historical_average_delay_hours
+timing_deviation_hours
+```
+
+It does not introduce an arbitrary `timing_deviation_detected` threshold.
+
+---
+
+## DD-059 — Missing Timing Evidence Must Remain Explicit
+
+**Decision:** Timing analysis must preserve unavailable timestamps as unknown.
+
+### Rationale
+
+The system should not fabricate settlement delays or historical comparisons when required timestamps are absent.
+
+### Consequence
+
+If timing cannot be calculated:
+
+```text
+timing_available = false
+settlement_delay_hours = null
+timing_deviation_hours = null
+```
+
+---
+
+## DD-060 — Population Pattern Intelligence Must Be Deterministic
+
+**Decision:** Population exception patterns are calculated from deterministic exception assessments.
+
+### Consequence
+
+The pattern layer exposes:
+
+```text
+total_transactions
+total_exceptions
+exception counts by category
+high-severity counts
+recurring categories
+```
+
+It does not introduce an opaque risk score.
+
+---
+
+## DD-061 — Aggregate Financial Exposure by Currency
+
+**Decision:** Population-level known financial impact is grouped by currency.
+
+### Rationale
+
+Amounts denominated in different currencies cannot safely be added without an explicit conversion basis.
+
+### Consequence
+
+Pattern intelligence represents:
+
+```text
+known_financial_impact_by_currency
+```
+
+rather than a blind cross-currency total.
+
+---
+
+## DD-062 — AI Investigation Must Use Trusted Deterministic Context
+
+**Decision:** AI investigation receives structured context generated by deterministic application services.
+
+### Consequence
+
+```text
+Database
+   ↓
+Deterministic Services
+   ↓
+Investigation Context
+   ↓
+Gemini
+```
+
+The model is not given authority to establish financial truth independently.
+
+---
+
+## DD-063 — AI Investigation Cannot Change Control Decisions
+
+**Decision:** AI investigation output is explanatory and guidance-oriented and cannot mutate financial, lifecycle, remediation, priority, or governance state.
+
+### Consequence
+
+AI cannot:
+
+```text
+Change category
+Change severity
+Change financial impact
+Change priority
+Change governance
+Create remediation
+Execute remediation
+Acknowledge
+Resolve
+```
+
+---
+
+## DD-064 — AI Must Preserve Evidence Gaps
+
+**Decision:** AI investigation must explicitly communicate unavailable or insufficient evidence.
+
+### Rationale
+
+A trustworthy investigation assistant should distinguish evidence from inference.
+
+### Consequence
+
+Examples include:
+
+```text
+Timing unavailable
+Financial impact unknown
+Insufficient historical evidence
+```
+
+rather than fabricated conclusions.
+
+---
+
+## DD-065 — Investigation Guidance Remains Human-Owned
+
+**Decision:** AI investigation guidance is guidance for an operator, not an autonomous operational command.
+
+### Consequence
+
+```text
+AI Investigation
+      ↓
+Human Operator
+      ↓
+Controlled / Explicit Workflow
+```
+
+---
+
+# Cross-Phase Architectural Decisions
+
+## DD-066 — Preserve Separation Between Financial Truth, Operational State, and Audit History
+
+**Decision:** Financial source data, operational workflow state, and audit history remain separate concerns as the system evolves.
+
+### Consequence
+
+```text
+Financial Truth
+    ├── transactions
+    └── settlements
+
+Operational State
+    ├── exception_lifecycles
+    └── controlled_actions
+
+Audit History
+    └── audit_logs
+```
+
+---
+
+## DD-067 — Preserve the Deterministic Safety Boundary as Intelligence Expands
+
+**Decision:** New AI and intelligence capabilities must integrate above the deterministic financial/control layers rather than bypassing them.
+
+### Consequence
+
+```text
+Financial Truth
+      ↓
+Deterministic Assessment
+      ↓
+Operational Control
+      ↓
+AI Context
+      ↓
+AI Explanation
+      ↓
+Human / Controlled Workflow
+```
+
+---
+
+## DD-068 — Derived Intelligence Should Not Create a Second Financial Truth
+
+**Decision:** Historical, timing, pattern, governance, and operational intelligence should derive from existing authoritative records and deterministic rules.
+
+### Rationale
+
+Multiple independent interpretations of the same financial records could produce contradictory results.
+
+### Consequence
+
+Derived intelligence reuses existing reconciliation and assessment semantics whenever applicable.
+
+---
+
+## DD-069 — Preserve Explicit Uncertainty Across All Intelligence Layers
+
+**Decision:** Missing or non-quantifiable evidence remains explicitly unknown throughout downstream intelligence and AI layers.
+
+### Consequence
+
+```text
+Unknown
+   ↓
+Unknown
+   ↓
+Explained as unknown
+```
+
+rather than becoming an invented value.
 
 ---
 
@@ -989,7 +1103,7 @@ The major architectural decisions made so far can be summarized as:
 
 9. AI cannot invent financial exposure.
 
-10. AI recommendations pass through a deterministic controller.
+10. AI recommendations pass through deterministic control.
 
 11. Only explicitly allowed controlled actions can execute.
 
@@ -1021,9 +1135,42 @@ The major architectural decisions made so far can be summarized as:
 
 25. Operational detail APIs cannot become execution paths.
 
-26. The system evolves from exception detection toward controlled, auditable financial operations.
+26. Governance and escalation remain deterministic.
+
+27. Exception aging uses authoritative lifecycle creation time.
+
+28. Illegal state transitions are rejected deterministically.
+
+29. Historical intelligence reuses deterministic financial assessment.
+
+30. Historical analysis excludes the current payment.
+
+31. Exception lifecycle state is not historical event history.
+
+32. Recurrence signals are explicit rather than opaque probabilities.
+
+33. Population recurrence is not proof of current-payment history.
+
+34. Settlement timing is contextual evidence, not automatic risk.
+
+35. Missing timing evidence remains explicit.
+
+36. Population patterns are deterministic.
+
+37. Financial exposure is aggregated by currency.
+
+38. AI investigation consumes trusted deterministic context.
+
+39. AI investigation cannot mutate control state.
+
+40. AI preserves evidence gaps.
+
+41. Investigation guidance remains human-owned.
+
+42. New intelligence layers must not create a second financial truth.
+
 ```
 
 The resulting design principle is:
 
-> **AI recommends. Deterministic logic decides what is allowed. Controlled workflows execute. Humans retain resolution authority. Audit logs preserve what happened. Operational control makes that state visible and actionable.**
+> **AI recommends and explains. Deterministic financial logic establishes truth and decides what is allowed. Controlled workflows execute permitted operational actions. Humans retain resolution authority. Governance determines escalation. Audit logs preserve what happened. Intelligence provides historical and population context without replacing the underlying financial truth.**

@@ -17,7 +17,7 @@ from app.schemas.exception_lifecycle import ExceptionLifecycleResponse
 
 from app.services.exception_lifecycle import (
     get_controlled_actions_for_exception,
-    get_or_create_exception_record,
+    get_exception_record,
 )
 
 from app.schemas.controller_decision import ControllerDecision
@@ -55,25 +55,44 @@ def acknowledge_exception(
     payment_id: str,
     db: Session = Depends(get_db),
 ):
-    record = get_or_create_exception_record(db, payment_id)
+    record = get_exception_record(
+        db=db,
+        payment_id=payment_id,
+    )
 
-    if record.status == ExceptionLifecycleStatus.OPEN:
-        record.status = ExceptionLifecycleStatus.ACKNOWLEDGED
-        db.commit()
-        db.refresh(record)
-
-        controlled_actions = get_controlled_actions_for_exception(
-            db=db,
-            payment_id=payment_id,
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No exception lifecycle found for payment {payment_id}",
         )
 
-        return {
-            "payment_id": record.payment_id,
-            "status": record.status,
-            "created_at": record.created_at,
-            "updated_at": record.updated_at,
-            "controlled_actions": controlled_actions,
-        }
+    if record.status != ExceptionLifecycleStatus.OPEN:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Exception lifecycle for payment {payment_id} "
+                f"cannot be acknowledged from status "
+                f"'{record.status.value}'."
+            ),
+        )
+
+    record.status = ExceptionLifecycleStatus.ACKNOWLEDGED
+
+    db.commit()
+    db.refresh(record)
+
+    controlled_actions = get_controlled_actions_for_exception(
+        db=db,
+        payment_id=payment_id,
+    )
+
+    return {
+        "payment_id": record.payment_id,
+        "status": record.status,
+        "created_at": record.created_at,
+        "updated_at": record.updated_at,
+        "controlled_actions": controlled_actions,
+    }
 
 
 @router.post(
@@ -84,25 +103,45 @@ def resolve_exception(
     payment_id: str,
     db: Session = Depends(get_db),
 ):
-    record = get_or_create_exception_record(db, payment_id)
+    record = get_exception_record(
+        db=db,
+        payment_id=payment_id,
+    )
 
-    if record.status == ExceptionLifecycleStatus.ACKNOWLEDGED:
-        record.status = ExceptionLifecycleStatus.RESOLVED
-        db.commit()
-        db.refresh(record)
-
-        controlled_actions = get_controlled_actions_for_exception(
-            db=db,
-            payment_id=payment_id,
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No exception lifecycle found for payment {payment_id}",
         )
 
-        return {
-            "payment_id": record.payment_id,
-            "status": record.status,
-            "created_at": record.created_at,
-            "updated_at": record.updated_at,
-            "controlled_actions": controlled_actions,
-        }
+    if record.status != ExceptionLifecycleStatus.ACKNOWLEDGED:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Exception lifecycle for payment {payment_id} "
+                f"cannot be resolved from status "
+                f"'{record.status.value}'."
+            ),
+        )
+
+    record.status = ExceptionLifecycleStatus.RESOLVED
+
+    db.commit()
+    db.refresh(record)
+
+    controlled_actions = get_controlled_actions_for_exception(
+        db=db,
+        payment_id=payment_id,
+    )
+
+    return {
+        "payment_id": record.payment_id,
+        "status": record.status,
+        "created_at": record.created_at,
+        "updated_at": record.updated_at,
+        "controlled_actions": controlled_actions,
+    }
+
 
 @router.get(
     "/{payment_id}/lifecycle",
@@ -112,11 +151,16 @@ def get_exception_lifecycle(
     payment_id: str,
     db: Session = Depends(get_db),
 ):
-
-    record = get_or_create_exception_record(
+    record = get_exception_record(
         db=db,
         payment_id=payment_id,
     )
+
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No exception lifecycle found for payment {payment_id}",
+        )
 
     controlled_actions = get_controlled_actions_for_exception(
         db=db,

@@ -1,4 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, Request
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from app.db.database import get_db
 
 from app.core.api.routes.ingestion import router as ingestion_router
 from app.core.api.routes.settlements import router as settlements_router
@@ -16,6 +21,16 @@ app = FastAPI(
     version="0.1.0",
 )
 
+@app.exception_handler(Exception)
+async def internal_server_error_handler(
+    request: Request,
+    exc: Exception,
+):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
+
 app.include_router(transactions_router)
 app.include_router(settlements_router)
 app.include_router(ingestion_router)
@@ -30,3 +45,8 @@ app.include_router(intelligence_router)
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.get("/ready")
+def readiness_check(db: Session = Depends(get_db)):
+    db.execute(text("SELECT 1"))
+    return {"status": "ready"}

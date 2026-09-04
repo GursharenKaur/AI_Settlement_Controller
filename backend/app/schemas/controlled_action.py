@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.controlled_action import (
     ControlledActionStatus,
@@ -9,9 +9,11 @@ from app.models.controlled_action import (
 
 
 class ControlledActionCreate(BaseModel):
-    payment_id: str
+    payment_id: str = Field(
+        min_length=1,
+        max_length=100,
+    )
     action_type: ControlledActionType
-
 
 class ControlledActionResponse(BaseModel):
     id: int

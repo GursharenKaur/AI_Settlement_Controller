@@ -13,7 +13,7 @@ from app.services.exception_lifecycle import (
 )
 from app.services.reconciliation import reconcile_payment
 from decimal import Decimal
-
+from app.services.exception_aging import calculate_exception_age
 
 def get_operational_exception_control(
     db: Session,
@@ -56,6 +56,15 @@ def get_operational_exception_control(
         if lifecycle_record is not None
         else None
     )
+
+    if lifecycle_record is not None:
+        age_minutes, age_hours, aging_band = calculate_exception_age(
+            created_at=lifecycle_record.created_at,
+        )
+    else:
+        age_minutes = None
+        age_hours = None
+        aging_band = None
 
     decision = build_controller_decision(assessment)
 
@@ -105,6 +114,9 @@ def get_operational_exception_control(
         human_review_required=decision.human_review_required,
         controlled_actions=action_items,
         remediation_status=remediation_status,
+        age_minutes=age_minutes,
+        age_hours=age_hours,
+        aging_band=aging_band,
     )
 
 

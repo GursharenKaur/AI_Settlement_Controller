@@ -33,11 +33,17 @@ class OperationalExceptionControl(BaseModel):
     severity: ExceptionSeverity
     financial_impact: Decimal | None
     priority_score: int
+
+    age_minutes: int | None
+    age_hours: float | None
+    aging_band: str | None
+
     lifecycle_status: ExceptionLifecycleStatus | None
     recommended_action: ControllerAction
     human_review_required: bool
     controlled_actions: list[OperationalControlledAction]
     remediation_status: str
+
 
 class OperationalControlSummary(BaseModel):
     total_exceptions: int

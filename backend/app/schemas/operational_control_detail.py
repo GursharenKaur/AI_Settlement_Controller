@@ -52,6 +52,10 @@ class OperationalControlDetail(BaseModel):
     financial_impact: Decimal | None
     priority_score: int
 
+    age_minutes: int | None
+    age_hours: float | None
+    aging_band: str | None
+
     lifecycle_status: ExceptionLifecycleStatus | None
 
     recommended_action: ControllerAction

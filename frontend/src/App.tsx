@@ -749,224 +749,6 @@ function App() {
                   </div>
                 </div>
 
-                <div className="intelligence-preview">
-                  <div className="intelligence-heading">
-                    <div>
-                      <span className="section-title">INTELLIGENCE</span>
-                      <strong>Historical context</strong>
-                    </div>
-
-                    <span className="ai-label">DETERMINISTIC</span>
-                  </div>
-
-                  {historicalIntelligenceLoading ? (
-                    <div className="state-card">
-                      Loading historical intelligence...
-                    </div>
-                  ) : historicalIntelligenceError ? (
-                    <div className="state-card error-state">
-                      {historicalIntelligenceError}
-                    </div>
-                  ) : historicalIntelligence ? (
-                    <>
-                      <div className="detail-grid">
-                        <div>
-                          <span>Historical transactions</span>
-                          <strong>
-                            {
-                              historicalIntelligence.historical_context
-                                .historical_transaction_count
-                            }
-                          </strong>
-                        </div>
-
-                        <div>
-                          <span>Historical exceptions</span>
-                          <strong>
-                            {
-                              historicalIntelligence.historical_context
-                                .historical_exception_count
-                            }
-                          </strong>
-                        </div>
-
-                        <div>
-                          <span>Same category</span>
-                          <strong>
-                            {
-                              historicalIntelligence.historical_context
-                                .same_category_exception_count
-                            }
-                          </strong>
-                        </div>
-
-                        <div>
-                          <span>Same currency</span>
-                          <strong>
-                            {
-                              historicalIntelligence.historical_context
-                                .same_currency_exception_count
-                            }
-                          </strong>
-                        </div>
-                      </div>
-
-                      <div className="control-state">
-                        <div className="state-row">
-                          <span>Category + currency recurrence</span>
-
-                          <strong>
-                            {
-                              historicalIntelligence.historical_context
-                                .same_category_and_currency_exception_count
-                            }
-                          </strong>
-                        </div>
-
-                        <div className="state-row">
-                          <span>Recurrence detected</span>
-
-                          <strong>
-                            {historicalIntelligence.historical_context.recurrence_detected
-                              ? "YES"
-                              : "NO"}
-                          </strong>
-                        </div>
-
-                        <div className="state-row">
-                          <span>Settlement timing</span>
-
-                          <strong>
-                            {historicalIntelligence.historical_context.timing_available
-                              ? "AVAILABLE"
-                              : "UNAVAILABLE"}
-                          </strong>
-                        </div>
-
-                        <div className="state-row">
-                          <span>Historical average delay</span>
-
-                          <strong>
-                            {historicalIntelligence.historical_context
-                              .historical_average_delay_hours !== null
-                              ? `${historicalIntelligence.historical_context.historical_average_delay_hours.toFixed(
-                                  2,
-                                )}h`
-                              : "—"}
-                          </strong>
-                        </div>
-
-                        <div className="state-row">
-                          <span>Timing deviation</span>
-
-                          <strong>
-                            {historicalIntelligence.historical_context
-                              .timing_deviation_hours !== null
-                              ? `${historicalIntelligence.historical_context.timing_deviation_hours.toFixed(
-                                  2,
-                                )}h`
-                              : "—"}
-                          </strong>
-                        </div>
-                      </div>
-
-                      <p>
-                        Historical context is population-level evidence and does not modify
-                        deterministic exception classification, financial impact, priority,
-                        governance, or human resolution authority.
-                      </p>
-
-                      <div className="ai-investigation">
-                        <div className="intelligence-heading">
-                          <div>
-                            <span className="section-title">AI INVESTIGATION</span>
-                            <strong>Investigation explanation</strong>
-                          </div>
-
-                          <span className="ai-label">AI-ASSISTED</span>
-                        </div>
-
-                        {aiInvestigationLoading ? (
-                          <div className="state-card">
-                            Generating investigation context...
-                          </div>
-                        ) : aiInvestigationError ? (
-                          <div className="state-card error-state">
-                            {aiInvestigationError}
-                          </div>
-                        ) : aiInvestigation ? (
-                          <>
-                            <div className="ai-investigation-content">
-                              <div className="ai-investigation-item">
-                                <span className="ai-investigation-label">
-                                  Investigation summary
-                                </span>
-
-                                <p className="ai-investigation-text">
-                                  {aiInvestigation.investigation_summary}
-                                </p>
-                              </div>
-
-                              <div className="ai-investigation-item">
-                                <span className="ai-investigation-label">
-                                  Historical context
-                                </span>
-
-                                <p className="ai-investigation-text">
-                                  {aiInvestigation.historical_context_explanation}
-                                </p>
-                              </div>
-
-                              <div className="ai-investigation-item">
-                                <span className="ai-investigation-label">
-                                  Timing context
-                                </span>
-
-                                <p className="ai-investigation-text">
-                                  {aiInvestigation.timing_context_explanation}
-                                </p>
-                              </div>
-
-                              <div className="ai-investigation-item">
-                                <span className="ai-investigation-label">
-                                  Evidence gaps
-                                </span>
-
-                                <p className="ai-investigation-text">
-                                  {aiInvestigation.evidence_gaps}
-                                </p>
-                              </div>
-
-                              <div className="ai-investigation-item">
-                                <span className="ai-investigation-label">
-                                  Investigation guidance
-                                </span>
-
-                                <p className="ai-investigation-text">
-                                  {aiInvestigation.investigation_guidance}
-                                </p>
-                              </div>
-                            </div>
-
-                            <p>
-                              AI-generated investigation context is advisory only. It does not
-                              determine financial truth, exception classification, priority,
-                              governance, remediation, or human resolution.
-                            </p>
-                          </>
-                        ) : (
-                          <div className="state-card">
-                            AI investigation is unavailable for this exception.
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="state-card">
-                      Historical intelligence is unavailable for this exception.
-                    </div>
-                  )}
-                </div>
 
                 <div className="operator-actions">
                   <button type="button" disabled>
@@ -989,6 +771,211 @@ function App() {
               </>
             )}
           </aside>
+        </section>
+
+        <section className="panel intelligence-panel">
+          <div className="panel-header intelligence-panel-header">
+            <div>
+              <p className="panel-kicker">EXCEPTION INTELLIGENCE</p>
+              <h2>Historical &amp; AI Investigation</h2>
+              <p className="panel-subtitle">
+                Deterministic historical evidence first, followed by AI-assisted investigation context.
+              </p>
+            </div>
+          </div>
+
+          <div className="intelligence-body">
+            <section className="intelligence-block historical-block">
+              <div className="block-heading">
+                <div>
+                  <span className="section-title">HISTORICAL CONTEXT</span>
+                  <h3>Population-level evidence</h3>
+                </div>
+                <span className="ai-label">DETERMINISTIC</span>
+              </div>
+
+              {historicalIntelligenceLoading ? (
+                <div className="state-card compact-state">
+                  Loading historical intelligence...
+                </div>
+              ) : historicalIntelligenceError ? (
+                <div className="state-card error-state compact-state">
+                  {historicalIntelligenceError}
+                </div>
+              ) : historicalIntelligence ? (
+                <>
+                  <div className="history-metrics">
+                    <div className="history-metric">
+                      <span>Historical transactions</span>
+                      <strong>
+                        {historicalIntelligence.historical_context
+                          .historical_transaction_count}
+                      </strong>
+                    </div>
+                    <div className="history-metric">
+                      <span>Historical exceptions</span>
+                      <strong>
+                        {historicalIntelligence.historical_context
+                          .historical_exception_count}
+                      </strong>
+                    </div>
+                    <div className="history-metric">
+                      <span>Same category</span>
+                      <strong>
+                        {historicalIntelligence.historical_context
+                          .same_category_exception_count}
+                      </strong>
+                    </div>
+                    <div className="history-metric">
+                      <span>Same currency</span>
+                      <strong>
+                        {historicalIntelligence.historical_context
+                          .same_currency_exception_count}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="history-state-grid">
+                    <div className="history-state-item">
+                      <span>Category + currency recurrence</span>
+                      <strong>
+                        {historicalIntelligence.historical_context
+                          .same_category_and_currency_exception_count}
+                      </strong>
+                    </div>
+                    <div className="history-state-item">
+                      <span>Recurrence detected</span>
+                      <strong
+                        className={
+                          historicalIntelligence.historical_context
+                            .recurrence_detected
+                            ? "positive"
+                            : ""
+                        }
+                      >
+                        {historicalIntelligence.historical_context.recurrence_detected
+                          ? "YES"
+                          : "NO"}
+                      </strong>
+                    </div>
+                    <div className="history-state-item">
+                      <span>Settlement timing</span>
+                      <strong>
+                        {historicalIntelligence.historical_context.timing_available
+                          ? "AVAILABLE"
+                          : "UNAVAILABLE"}
+                      </strong>
+                    </div>
+                    <div className="history-state-item">
+                      <span>Historical average delay</span>
+                      <strong>
+                        {historicalIntelligence.historical_context
+                          .historical_average_delay_hours !== null
+                          ? `${historicalIntelligence.historical_context.historical_average_delay_hours.toFixed(
+                              2,
+                            )}h`
+                          : "—"}
+                      </strong>
+                    </div>
+                    <div className="history-state-item">
+                      <span>Timing deviation</span>
+                      <strong>
+                        {historicalIntelligence.historical_context
+                          .timing_deviation_hours !== null
+                          ? `${historicalIntelligence.historical_context.timing_deviation_hours.toFixed(
+                              2,
+                            )}h`
+                          : "—"}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <p className="intelligence-note">
+                    Historical context is population-level evidence and does not modify
+                    deterministic exception classification, financial impact, priority,
+                    governance, or human resolution authority.
+                  </p>
+                </>
+              ) : (
+                <div className="state-card compact-state">
+                  Historical intelligence is unavailable for this exception.
+                </div>
+              )}
+            </section>
+
+            <div className="intelligence-divider" />
+
+            <section className="intelligence-block ai-block">
+              <div className="block-heading">
+                <div>
+                  <span className="section-title">AI-ASSISTED INVESTIGATION</span>
+                  <h3>Investigation context</h3>
+                </div>
+                <span className="ai-label ai-label-prominent">AI-ASSISTED</span>
+              </div>
+
+              <p className="block-description">
+                Advisory reasoning grounded in the selected exception and available historical evidence.
+              </p>
+
+              {aiInvestigationLoading ? (
+                <div className="state-card">Generating investigation context...</div>
+              ) : aiInvestigationError ? (
+                <div className="state-card error-state">{aiInvestigationError}</div>
+              ) : aiInvestigation ? (
+                <>
+                  <div className="ai-summary-card">
+                    <div className="ai-summary-marker">01</div>
+                    <div>
+                      <span className="ai-investigation-label">Investigation summary</span>
+                      <p className="ai-investigation-text">
+                        {aiInvestigation.investigation_summary}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="ai-investigation-grid">
+                    <div className="ai-investigation-item">
+                      <span className="ai-investigation-label">Historical context</span>
+                      <p className="ai-investigation-text">
+                        {aiInvestigation.historical_context_explanation}
+                      </p>
+                    </div>
+                    <div className="ai-investigation-item">
+                      <span className="ai-investigation-label">Timing context</span>
+                      <p className="ai-investigation-text">
+                        {aiInvestigation.timing_context_explanation}
+                      </p>
+                    </div>
+                    <div className="ai-investigation-item">
+                      <span className="ai-investigation-label">Evidence gaps</span>
+                      <p className="ai-investigation-text">
+                        {aiInvestigation.evidence_gaps}
+                      </p>
+                    </div>
+                    <div className="ai-investigation-item">
+                      <span className="ai-investigation-label">Investigation guidance</span>
+                      <p className="ai-investigation-text">
+                        {aiInvestigation.investigation_guidance}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="ai-advisory-note">
+                    <span>Advisory only</span>
+                    <p>
+                      AI-generated investigation context does not determine financial truth,
+                      exception classification, priority, governance, remediation, or human resolution.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="state-card">
+                  AI investigation is unavailable for this exception.
+                </div>
+              )}
+            </section>
+          </div>
         </section>
 
         <section className="panel governance-panel">

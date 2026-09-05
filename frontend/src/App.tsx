@@ -3,12 +3,14 @@ import "./App.css";
 import { useEffect, useState } from "react";
 
 import {
+  getAIInvestigation,
   getControlSummary,
   getExceptionDetail,
   getExceptionLifecycle,
   getGovernance,
   getHistoricalIntelligence,
   getRiskQueue,
+  type AIInvestigationAnalysis,
   type ExceptionLifecycleResponse,
   type GovernanceItem,
   type HistoricalExceptionIntelligenceResponse,
@@ -111,6 +113,15 @@ function App() {
     useState(false);
 
   const [historicalIntelligenceError, setHistoricalIntelligenceError] =
+    useState<string | null>(null);
+
+  const [aiInvestigation, setAiInvestigation] =
+    useState<AIInvestigationAnalysis | null>(null);
+
+  const [aiInvestigationLoading, setAiInvestigationLoading] =
+    useState(false);
+
+  const [aiInvestigationError, setAiInvestigationError] =
     useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -315,6 +326,49 @@ function App() {
 
     if (!loading && summary) {
       void loadHistoricalIntelligence();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPaymentId, loading, summary]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAIInvestigation() {
+      try {
+        setAiInvestigationLoading(true);
+        setAiInvestigationError(null);
+        setAiInvestigation(null);
+
+        const investigationData =
+          await getAIInvestigation(selectedPaymentId);
+
+        if (!cancelled) {
+          setAiInvestigation(investigationData);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error(
+            `Failed to load AI investigation for ${selectedPaymentId}:`,
+            err,
+          );
+
+          setAiInvestigation(null);
+          setAiInvestigationError(
+            "AI investigation is currently unavailable.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setAiInvestigationLoading(false);
+        }
+      }
+    }
+
+    if (!loading && summary) {
+      void loadAIInvestigation();
     }
 
     return () => {
@@ -821,6 +875,91 @@ function App() {
                         deterministic exception classification, financial impact, priority,
                         governance, or human resolution authority.
                       </p>
+
+                      <div className="ai-investigation">
+                        <div className="intelligence-heading">
+                          <div>
+                            <span className="section-title">AI INVESTIGATION</span>
+                            <strong>Investigation explanation</strong>
+                          </div>
+
+                          <span className="ai-label">AI-ASSISTED</span>
+                        </div>
+
+                        {aiInvestigationLoading ? (
+                          <div className="state-card">
+                            Generating investigation context...
+                          </div>
+                        ) : aiInvestigationError ? (
+                          <div className="state-card error-state">
+                            {aiInvestigationError}
+                          </div>
+                        ) : aiInvestigation ? (
+                          <>
+                            <div className="ai-investigation-content">
+                              <div className="ai-investigation-item">
+                                <span className="ai-investigation-label">
+                                  Investigation summary
+                                </span>
+
+                                <p className="ai-investigation-text">
+                                  {aiInvestigation.investigation_summary}
+                                </p>
+                              </div>
+
+                              <div className="ai-investigation-item">
+                                <span className="ai-investigation-label">
+                                  Historical context
+                                </span>
+
+                                <p className="ai-investigation-text">
+                                  {aiInvestigation.historical_context_explanation}
+                                </p>
+                              </div>
+
+                              <div className="ai-investigation-item">
+                                <span className="ai-investigation-label">
+                                  Timing context
+                                </span>
+
+                                <p className="ai-investigation-text">
+                                  {aiInvestigation.timing_context_explanation}
+                                </p>
+                              </div>
+
+                              <div className="ai-investigation-item">
+                                <span className="ai-investigation-label">
+                                  Evidence gaps
+                                </span>
+
+                                <p className="ai-investigation-text">
+                                  {aiInvestigation.evidence_gaps}
+                                </p>
+                              </div>
+
+                              <div className="ai-investigation-item">
+                                <span className="ai-investigation-label">
+                                  Investigation guidance
+                                </span>
+
+                                <p className="ai-investigation-text">
+                                  {aiInvestigation.investigation_guidance}
+                                </p>
+                              </div>
+                            </div>
+
+                            <p>
+                              AI-generated investigation context is advisory only. It does not
+                              determine financial truth, exception classification, priority,
+                              governance, remediation, or human resolution.
+                            </p>
+                          </>
+                        ) : (
+                          <div className="state-card">
+                            AI investigation is unavailable for this exception.
+                          </div>
+                        )}
+                      </div>
                     </>
                   ) : (
                     <div className="state-card">

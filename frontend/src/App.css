@@ -606,3 +606,100 @@
     display: none;
   }
 }
+
+.ai-investigation-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.ai-investigation-item {
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.ai-investigation-item:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.ai-investigation-label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ai-investigation-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--text);
+}
+
+/* =========================================================
+   Dashboard workspace
+   ========================================================= */
+
+.dashboard-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(380px, 0.95fr);
+  gap: 16px;
+  align-items: start;
+  width: 100%;
+}
+
+.dashboard-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.dashboard-right {
+  min-width: 0;
+}
+
+.dashboard-left > .panel,
+.dashboard-right > .panel {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Keep the selected exception visible while the
+   intelligence section grows vertically. */
+.dashboard-right .detail-panel {
+  position: sticky;
+  top: 16px;
+}
+
+/* Governance stays directly beneath the queue instead
+   of being pushed below the tall detail column. */
+.dashboard-left .governance-panel {
+  margin-top: 0;
+}
+
+/* =========================================================
+   Responsive layout
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .dashboard-workspace {
+    grid-template-columns: minmax(0, 1.35fr) minmax(340px, 1fr);
+  }
+}
+
+@media (max-width: 820px) {
+  .dashboard-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-right .detail-panel {
+    position: static;
+  }
+}

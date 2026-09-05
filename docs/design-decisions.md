@@ -1174,3 +1174,230 @@ The major architectural decisions made so far can be summarized as:
 The resulting design principle is:
 
 > **AI recommends and explains. Deterministic financial logic establishes truth and decides what is allowed. Controlled workflows execute permitted operational actions. Humans retain resolution authority. Governance determines escalation. Audit logs preserve what happened. Intelligence provides historical and population context without replacing the underlying financial truth.**
+
+
+---
+
+# Phase 10 — Production Readiness and Operator Experience Decisions
+
+## DD-070 — The Operator UI Is a Projection, Not a Decision Engine
+
+**Decision:** The Settlement Control Center must consume backend-derived financial, operational, governance, and intelligence state rather than independently calculating authoritative decisions.
+
+### Rationale
+
+Duplicating financial or risk logic in the frontend would create conflicting sources of truth.
+
+### Consequence
+
+```text
+Backend Deterministic State
+        ↓
+API Contract
+        ↓
+Operator UI
+```
+
+The UI presents and orchestrates existing state; it does not redefine it.
+
+---
+
+## DD-071 — Preserve the Deterministic Backend as the Source of Operational Truth
+
+**Decision:** Risk ordering, priority, financial impact, governance, lifecycle semantics, and controlled-action validity remain backend responsibilities.
+
+### Consequence
+
+Frontend presentation changes cannot alter:
+
+```text
+Financial impact
+Priority
+Governance
+Lifecycle validity
+Allowed actions
+```
+
+---
+
+## DD-072 — Separate Evidence Presentation from AI Interpretation
+
+**Decision:** Deterministic historical intelligence and AI-assisted investigation are presented as distinct layers.
+
+### Rationale
+
+Operators must be able to distinguish observed application evidence from model-generated explanation.
+
+### Consequence
+
+```text
+Historical / Timing / Population Evidence
+                ↓
+        AI Interpretation
+                ↓
+       Human Investigation
+```
+
+---
+
+## DD-073 — Long-Form Investigation Requires a Dedicated Workspace
+
+**Decision:** Historical and AI investigation content should use a full-width or dedicated workspace rather than being constrained to a narrow exception-detail column.
+
+### Rationale
+
+Investigation content is inherently more verbose than operational metadata and requires readable information hierarchy.
+
+### Consequence
+
+The UI prioritizes:
+
+```text
+Operational state
+        ↓
+Control evidence
+        ↓
+Historical context
+        ↓
+AI investigation
+```
+
+---
+
+## DD-074 — Expected Absence Must Be Represented Explicitly
+
+**Decision:** A missing persisted lifecycle record remains a valid application state and must not be silently converted into an inferred `OPEN` state.
+
+### Consequence
+
+```text
+No lifecycle record
+        ↓
+HTTP 404
+        ↓
+Frontend null / absent state
+        ↓
+No lifecycle displayed
+```
+
+This preserves lifecycle semantics.
+
+---
+
+## DD-075 — API Contracts Should Preserve Business Semantics
+
+**Decision:** UI convenience must not force backend APIs to return fabricated or semantically misleading data.
+
+### Rationale
+
+Changing a meaningful `404 No lifecycle found` into a synthetic success response would blur the distinction between absence and state.
+
+### Consequence
+
+Expected HTTP errors may be translated at the client boundary without changing the underlying domain semantics.
+
+---
+
+## DD-076 — Centralize AI Model Configuration
+
+**Decision:** AI services keep their model selection centralized through service-level configuration rather than scattering model names across application logic.
+
+### Consequence
+
+The current configured model is:
+
+```text
+gemini-3.6-flash
+```
+
+and changing the provider/model does not require changes to the deterministic financial pipeline.
+
+---
+
+## DD-077 — AI Availability Must Not Redefine Financial Correctness
+
+**Decision:** A Gemini availability, quota, model, or provider failure must not change deterministic reconciliation, exception classification, financial impact, priority, governance, or lifecycle state.
+
+### Consequence
+
+```text
+AI Available
+    → explanation / guidance available
+
+AI Unavailable
+    → deterministic control system remains authoritative
+```
+
+---
+
+## DD-078 — Final Validation Must Test the Integrated Workflow
+
+**Decision:** Final validation should verify the complete path from backend state through the operator UI rather than validating individual components only.
+
+### Consequence
+
+```text
+Database
+  ↓
+Deterministic Services
+  ↓
+API
+  ↓
+Frontend
+  ↓
+Historical Intelligence
+  ↓
+AI Investigation
+  ↓
+Operator Workflow
+```
+
+---
+
+## DD-079 — Presentation Improvements Must Not Weaken Control Boundaries
+
+**Decision:** UI improvements may change layout, hierarchy, readability, and interaction flow but must not bypass controlled actions, lifecycle validation, governance, auditability, or human resolution.
+
+### Consequence
+
+Visual polish remains subordinate to:
+
+```text
+Correctness
+Safety
+Auditability
+Explicit authorization
+Human resolution
+```
+
+---
+
+# Phase 10 Decision Summary
+
+The final phase establishes the operator experience without weakening the control architecture:
+
+```text
+1. The UI is a projection, not a decision engine.
+
+2. Backend deterministic state remains authoritative.
+
+3. Evidence and AI interpretation remain visibly distinct.
+
+4. Long-form investigation receives a dedicated readable workspace.
+
+5. Missing lifecycle records remain explicit absence.
+
+6. API contracts preserve domain semantics.
+
+7. AI model configuration remains centralized.
+
+8. AI availability cannot redefine financial truth.
+
+9. Final validation tests the integrated workflow.
+
+10. UI improvements cannot bypass control boundaries.
+```
+
+The resulting product principle is:
+
+> **Make the control system easy to operate without making the interface responsible for decisions that belong to the governed backend.**

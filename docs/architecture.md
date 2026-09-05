@@ -1369,7 +1369,7 @@ The architecture evolves in phases without bypassing earlier safety boundaries.
 
 ---
 
-## 27. Current Architectural State — End of Phase 9
+## 27. Current Architectural State — End of Phase 10
 
 The system has progressed from a transaction/settlement data layer into a controlled, auditable settlement intelligence platform:
 
@@ -1408,8 +1408,370 @@ Advanced Settlement Intelligence
         ↓
 Phase 10
 Production Readiness + Operator Experience
+        ├── Settlement Control Center
+        ├── Risk Queue + Operational Detail
+        ├── Historical + AI Investigation Workspace
+        ├── Human Resolution Workflow
+        ├── Controlled Remediation Visibility
+        ├── Deterministic API / UI Contract Handling
+        └── Final End-to-End Validation
 ```
 
 The central design philosophy remains:
 
 > **AI should help the settlement operations system understand and prioritize problems, but deterministic financial logic and controlled workflows must remain responsible for what the system is allowed to do. Humans retain the authority to resolve exceptions, while audit history preserves what happened.**
+
+
+---
+
+## 28. Phase 10 — Production Readiness and Operator Experience
+
+Phase 10 completes the system as an operator-facing settlement control platform. The objective is not to introduce a second intelligence or financial-processing layer, but to make the capabilities developed in Phases 1–9 usable as one coherent operational workflow.
+
+The Phase 10 architecture brings the existing backend control plane and intelligence services together through a dedicated operator experience:
+
+```text
+                    Settlement Control Center
+                              │
+          ┌───────────────────┼───────────────────┐
+          │                   │                   │
+      Risk Queue       Exception Detail      Control State
+          │                   │                   │
+          └───────────────────┼───────────────────┘
+                              │
+                Historical + AI Intelligence
+                              │
+             ┌────────────────┴────────────────┐
+             │                                 │
+      Controlled Remediation          Human Resolution
+             │                                 │
+             └────────────────┬────────────────┘
+                              │
+                         Audit History
+```
+
+The frontend is a read-oriented operational surface over the existing backend control plane. It does not become a second source of financial truth.
+
+### 28.1 Settlement Control Center
+
+The operator-facing application provides a consolidated control-center workflow.
+
+The primary experience exposes:
+
+```text
+Settlement Control Center
+    ├── Risk Queue
+    ├── Selected Exception
+    ├── Financial / Exception Context
+    ├── Lifecycle State
+    ├── Controlled Remediation
+    ├── Control Evidence
+    ├── Operator Actions
+    ├── Historical Intelligence
+    └── AI-Assisted Investigation
+```
+
+The control center is intentionally organized around an exception selected from the operational risk queue rather than around raw database records.
+
+### 28.2 Risk Queue Integration
+
+The frontend consumes the deterministic operational risk projection produced by the backend.
+
+The queue preserves the backend's operational semantics:
+
+```text
+ACTION_REQUIRED
+IN_PROGRESS
+HUMAN_RESOLUTION_REQUIRED
+MONITOR
+NO_ACTION_REQUIRED
+```
+
+Queue ordering remains a backend responsibility.
+
+The UI displays the resulting operational priority rather than independently recalculating financial risk.
+
+### 28.3 Exception Detail Workspace
+
+Selecting an exception loads the corresponding operational detail and presents:
+
+```text
+Payment / Exception identity
+Severity
+Priority
+Known financial impact
+Lifecycle
+Governance
+Controlled remediation
+Control evidence
+Operator actions
+```
+
+This creates a single investigation workspace without duplicating business logic in the browser.
+
+### 28.4 Historical and AI Intelligence Presentation
+
+Phase 10 turns the Phase 9 intelligence capabilities into a readable operator workflow.
+
+Historical intelligence is presented separately from AI interpretation.
+
+```text
+Deterministic Historical Intelligence
+        ↓
+Historical / Timing / Population Context
+        ↓
+AI-Assisted Investigation
+        ↓
+Human Interpretation
+```
+
+The UI distinguishes:
+
+```text
+Deterministic evidence
+        versus
+AI explanation and guidance
+```
+
+The AI investigation area exposes structured sections such as:
+
+```text
+Investigation Summary
+Historical Context
+Timing Context
+Evidence Gaps
+Investigation Guidance
+```
+
+The presentation does not promote AI output to authoritative financial truth.
+
+### 28.5 Controlled Remediation and Human Resolution
+
+The UI exposes controlled operational actions and human lifecycle operations through the existing backend contracts.
+
+The conceptual workflow remains:
+
+```text
+Risk Queue
+    ↓
+Investigate
+    ↓
+Controlled / Explicit Operational Action
+    ↓
+Audit
+    ↓
+Human Review
+    ↓
+Explicit Resolution
+```
+
+Controlled-action completion does not automatically resolve the exception.
+
+Human resolution remains explicit.
+
+### 28.6 Lifecycle Absence Semantics
+
+A lifecycle record is not implicitly created merely because the frontend requests lifecycle information.
+
+For an exception without a persisted lifecycle record:
+
+```text
+GET /exceptions/{payment_id}/lifecycle
+        ↓
+404 No exception lifecycle found
+        ↓
+Frontend interprets expected absence as null lifecycle
+        ↓
+UI displays no lifecycle state
+```
+
+This preserves the semantic distinction between:
+
+```text
+No lifecycle record
+        versus
+OPEN lifecycle
+```
+
+and prevents the frontend from inventing operational state.
+
+### 28.7 API Error Boundary
+
+The frontend API client translates HTTP failures into application-level errors and handles expected absence cases explicitly.
+
+This allows:
+
+```text
+Expected missing state
+        ↓
+Graceful UI representation
+```
+
+without changing the backend's business semantics merely to remove a browser network entry.
+
+Unexpected failures remain distinguishable from expected absence.
+
+### 28.8 AI Provider / Model Configuration
+
+The application keeps the model name centralized within the AI services.
+
+The final development configuration uses:
+
+```text
+gemini-3.6-flash
+```
+
+for:
+
+```text
+AI analysis
+AI investigation
+AI portfolio analysis
+```
+
+The model configuration remains isolated from the deterministic financial and control layers.
+
+The AI provider can therefore be changed without redesigning reconciliation, exception intelligence, lifecycle, governance, or controlled-action logic.
+
+### 28.9 UI Layout and Information Hierarchy
+
+The final UI was refined to avoid forcing long-form intelligence into a narrow detail column.
+
+The operator experience uses:
+
+```text
+Primary workspace
+    ├── Risk Queue
+    ├── Selected Exception / Control Detail
+    └── Full-width Intelligence Workspace
+            ├── Historical Context
+            └── AI Investigation
+```
+
+The layout emphasizes:
+
+```text
+Operational state first
+        ↓
+Financial / control evidence
+        ↓
+Historical context
+        ↓
+AI-assisted interpretation
+        ↓
+Human action
+```
+
+This ordering preserves the project's safety model while making the intelligence usable in practice.
+
+### 28.10 Phase 10 Validation
+
+The final implementation was validated through an end-to-end development workflow:
+
+```text
+Environment configuration
+        ↓
+Gemini API connectivity test
+        ↓
+Model availability validation
+        ↓
+Backend model configuration update
+        ↓
+Backend restart
+        ↓
+Frontend control-center validation
+        ↓
+AI investigation rendered successfully
+```
+
+A direct Gemini request using the configured environment and `gemini-3.6-flash` returned successfully.
+
+The final application also successfully rendered AI investigation content for an operational exception.
+
+The lifecycle 404 behavior was separately verified and confirmed to represent an absent persisted lifecycle record rather than a missing backend route.
+
+### 28.11 Phase 10 Completion State
+
+The completed system now provides:
+
+```text
+Financial Source Data
+        ↓
+Settlement Ingestion
+        ↓
+Deterministic Reconciliation
+        ↓
+Exception Intelligence
+        ↓
+Financial Impact + Priority
+        ↓
+Operational Control + Risk
+        ↓
+Governance + Aging
+        ↓
+Controlled Remediation
+        ↓
+Audit History
+        ↓
+Human Resolution
+        ↓
+Historical / Timing / Population Intelligence
+        ↓
+AI-Assisted Investigation
+        ↓
+Settlement Control Center
+```
+
+The operator experience is therefore a presentation and workflow layer over an already governed control plane, not an independent decision engine.
+
+---
+
+## 29. Final Architecture — End of Phase 10
+
+The AI Settlement Controller has evolved into an auditable settlement-control platform:
+
+```text
+                    ┌───────────────────────────┐
+                    │   Settlement Control      │
+                    │        Center             │
+                    └─────────────┬─────────────┘
+                                  │
+                    ┌─────────────▼─────────────┐
+                    │ Operational Control /     │
+                    │ Risk / Governance         │
+                    └─────────────┬─────────────┘
+                                  │
+             ┌────────────────────┼────────────────────┐
+             │                    │                    │
+             ▼                    ▼                    ▼
+       Financial Truth      Operational State    Audit History
+       Transactions         Lifecycles           Audit Logs
+       Settlements          Controlled Actions
+             │                    │
+             └────────────┬───────┘
+                          ▼
+                Deterministic Intelligence
+                Reconciliation
+                Exceptions
+                Financial Impact
+                Priority
+                Historical Context
+                Timing
+                Population Patterns
+                          │
+                          ▼
+                  Trusted AI Context
+                          │
+                          ▼
+                AI Explanation / Guidance
+                          │
+                          ▼
+                    Human Operator
+                          │
+                          ▼
+                Explicit Resolution
+```
+
+The governing principle remains:
+
+> **The Settlement Control Center makes the system operationally usable, but it does not become the authority for financial truth. Deterministic services establish financial and control state, AI explains and contextualizes that state, controlled workflows constrain operational actions, and humans retain explicit resolution authority.**

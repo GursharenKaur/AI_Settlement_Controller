@@ -54,7 +54,10 @@ export interface GovernanceClassification {
   governance_reason: string;
 }
 
-export type GovernanceResponse = GovernanceItem[];
+export interface GovernanceResponse {
+  value: GovernanceItem[];
+  Count: number;
+}
 
 export interface GovernanceItem {
   payment_id: string;
@@ -294,5 +297,13 @@ export async function getExceptionLifecycle(
 }
 
 export async function getGovernance(): Promise<GovernanceItem[]> {
-  return apiRequest<GovernanceItem[]>("/control/governance");
+  const response = await apiRequest<
+    GovernanceItem[] | GovernanceResponse
+  >("/control/governance");
+
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  return response.value;
 }

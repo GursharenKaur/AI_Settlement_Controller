@@ -7,9 +7,11 @@ import {
   getExceptionDetail,
   getExceptionLifecycle,
   getGovernance,
+  getHistoricalIntelligence,
   getRiskQueue,
   type ExceptionLifecycleResponse,
   type GovernanceItem,
+  type HistoricalExceptionIntelligenceResponse,
   type OperationalControlDetail,
   type OperationalControlSummary,
   type OperationalRiskItem,
@@ -101,6 +103,15 @@ function App() {
   const [lifecycleLoading, setLifecycleLoading] = useState(false);
 
   const [lifecycleError, setLifecycleError] = useState<string | null>(null);
+
+  const [historicalIntelligence, setHistoricalIntelligence] =
+    useState<HistoricalExceptionIntelligenceResponse | null>(null);
+
+  const [historicalIntelligenceLoading, setHistoricalIntelligenceLoading] =
+    useState(false);
+
+  const [historicalIntelligenceError, setHistoricalIntelligenceError] =
+    useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
 
@@ -261,6 +272,49 @@ function App() {
 
     if (!loading && summary) {
       void loadLifecycle();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPaymentId, loading, summary]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadHistoricalIntelligence() {
+      try {
+        setHistoricalIntelligenceLoading(true);
+        setHistoricalIntelligenceError(null);
+        setHistoricalIntelligence(null);
+
+        const intelligenceData =
+          await getHistoricalIntelligence(selectedPaymentId);
+
+        if (!cancelled) {
+          setHistoricalIntelligence(intelligenceData);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error(
+            `Failed to load historical intelligence for ${selectedPaymentId}:`,
+            err,
+          );
+
+          setHistoricalIntelligence(null);
+          setHistoricalIntelligenceError(
+            "Unable to load historical intelligence.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setHistoricalIntelligenceLoading(false);
+        }
+      }
+    }
+
+    if (!loading && summary) {
+      void loadHistoricalIntelligence();
     }
 
     return () => {
@@ -645,16 +699,134 @@ function App() {
                   <div className="intelligence-heading">
                     <div>
                       <span className="section-title">INTELLIGENCE</span>
-                      <strong>Investigation context</strong>
+                      <strong>Historical context</strong>
                     </div>
 
-                    <span className="ai-label">AI-ASSISTED</span>
+                    <span className="ai-label">DETERMINISTIC</span>
                   </div>
 
-                  <p>
-                    Historical, timing, and population context will appear here
-                    without changing deterministic financial truth.
-                  </p>
+                  {historicalIntelligenceLoading ? (
+                    <div className="state-card">
+                      Loading historical intelligence...
+                    </div>
+                  ) : historicalIntelligenceError ? (
+                    <div className="state-card error-state">
+                      {historicalIntelligenceError}
+                    </div>
+                  ) : historicalIntelligence ? (
+                    <>
+                      <div className="detail-grid">
+                        <div>
+                          <span>Historical transactions</span>
+                          <strong>
+                            {
+                              historicalIntelligence.historical_context
+                                .historical_transaction_count
+                            }
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>Historical exceptions</span>
+                          <strong>
+                            {
+                              historicalIntelligence.historical_context
+                                .historical_exception_count
+                            }
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>Same category</span>
+                          <strong>
+                            {
+                              historicalIntelligence.historical_context
+                                .same_category_exception_count
+                            }
+                          </strong>
+                        </div>
+
+                        <div>
+                          <span>Same currency</span>
+                          <strong>
+                            {
+                              historicalIntelligence.historical_context
+                                .same_currency_exception_count
+                            }
+                          </strong>
+                        </div>
+                      </div>
+
+                      <div className="control-state">
+                        <div className="state-row">
+                          <span>Category + currency recurrence</span>
+
+                          <strong>
+                            {
+                              historicalIntelligence.historical_context
+                                .same_category_and_currency_exception_count
+                            }
+                          </strong>
+                        </div>
+
+                        <div className="state-row">
+                          <span>Recurrence detected</span>
+
+                          <strong>
+                            {historicalIntelligence.historical_context.recurrence_detected
+                              ? "YES"
+                              : "NO"}
+                          </strong>
+                        </div>
+
+                        <div className="state-row">
+                          <span>Settlement timing</span>
+
+                          <strong>
+                            {historicalIntelligence.historical_context.timing_available
+                              ? "AVAILABLE"
+                              : "UNAVAILABLE"}
+                          </strong>
+                        </div>
+
+                        <div className="state-row">
+                          <span>Historical average delay</span>
+
+                          <strong>
+                            {historicalIntelligence.historical_context
+                              .historical_average_delay_hours !== null
+                              ? `${historicalIntelligence.historical_context.historical_average_delay_hours.toFixed(
+                                  2,
+                                )}h`
+                              : "—"}
+                          </strong>
+                        </div>
+
+                        <div className="state-row">
+                          <span>Timing deviation</span>
+
+                          <strong>
+                            {historicalIntelligence.historical_context
+                              .timing_deviation_hours !== null
+                              ? `${historicalIntelligence.historical_context.timing_deviation_hours.toFixed(
+                                  2,
+                                )}h`
+                              : "—"}
+                          </strong>
+                        </div>
+                      </div>
+
+                      <p>
+                        Historical context is population-level evidence and does not modify
+                        deterministic exception classification, financial impact, priority,
+                        governance, or human resolution authority.
+                      </p>
+                    </>
+                  ) : (
+                    <div className="state-card">
+                      Historical intelligence is unavailable for this exception.
+                    </div>
+                  )}
                 </div>
 
                 <div className="operator-actions">

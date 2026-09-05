@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.models.settlement import Settlement
 from app.schemas.ingestion import SettlementIngestionResult
 from app.schemas.settlement import SettlementCreate
+from app.services.exception_lifecycle import ensure_exception_lifecycle
 
 
 def ingest_settlements(
@@ -50,6 +51,10 @@ def ingest_settlements(
             continue
 
         result.created += 1
+        ensure_exception_lifecycle(
+            db=db,
+            payment_id=settlement.payment_id,
+        )
 
     db.commit()
 

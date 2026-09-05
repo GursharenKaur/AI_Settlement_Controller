@@ -2,6 +2,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.settlement import Settlement
+from app.services.exception_lifecycle import ensure_exception_lifecycle
 from app.schemas.settlement import SettlementCreate
 
 
@@ -21,6 +22,13 @@ def ingest_settlement(
     db.add(db_settlement)
 
     try:
+        db.flush()
+
+        ensure_exception_lifecycle(
+            db=db,
+            payment_id=settlement.payment_id,
+        )
+
         db.commit()
     except IntegrityError:
         db.rollback()

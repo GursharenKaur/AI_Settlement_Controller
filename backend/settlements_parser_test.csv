@@ -1,4 +1,0 @@
-settlement_id,payment_id,settled_amount,currency,status,settled_at
-set_csv_001,pay_csv_001,11750.00,INR,settled,2026-09-02T12:00:00Z
-set_csv_002,pay_csv_002,-50.00,INR,settled,2026-09-02T12:05:00Z
-

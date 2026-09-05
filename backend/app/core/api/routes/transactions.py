@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-
+from app.services.exception_lifecycle import ensure_exception_lifecycle
 from app.db.database import get_db
 from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionCreate, TransactionResponse
@@ -33,6 +33,13 @@ def create_transaction(
     db.add(db_transaction)
 
     try:
+        db.flush()
+
+        ensure_exception_lifecycle(
+            db=db,
+            payment_id=transaction.payment_id,
+        )
+
         db.commit()
     except IntegrityError:
         db.rollback()

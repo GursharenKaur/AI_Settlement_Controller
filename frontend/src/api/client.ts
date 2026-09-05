@@ -54,6 +54,27 @@ export interface GovernanceClassification {
   governance_reason: string;
 }
 
+export type GovernanceResponse = GovernanceItem[];
+
+export interface GovernanceItem {
+  payment_id: string;
+  category: ExceptionCategory;
+  severity: ExceptionSeverity;
+  financial_impact: string | null;
+  priority_score: number;
+  age_minutes: number | null;
+  age_hours: number | null;
+  aging_band: string | null;
+  lifecycle_status: ExceptionLifecycleStatus | null;
+  recommended_action: ControllerAction;
+  human_review_required: boolean;
+  controlled_actions: OperationalControlAction[];
+  remediation_status: RemediationStatus;
+  governance: GovernanceClassification;
+}
+
+
+
 export interface OperationalRiskItem {
   payment_id: string;
   category: ExceptionCategory;
@@ -153,6 +174,17 @@ export interface HistoricalExceptionIntelligenceResponse {
   historical_context: HistoricalExceptionContext;
 }
 
+export interface ExceptionLifecycleResponse {
+  payment_id: string;
+  status: ExceptionLifecycleStatus;
+  created_at: string;
+  updated_at: string;
+  resolution_reason: string | null;
+  resolution_note: string | null;
+  resolved_at: string | null;
+  controlled_actions: OperationalControlAction[];
+}
+
 export interface ExceptionPattern {
   category: ExceptionCategory;
   exception_count: number;
@@ -176,6 +208,16 @@ export interface AIInvestigationAnalysis {
   investigation_guidance: string[];
 }
 
+class ApiError extends Error {
+  status: number;
+
+  constructor(status: number, statusText: string) {
+    super(`API request failed: ${status} ${statusText}`);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function apiRequest<T>(
   path: string,
   options?: RequestInit,
@@ -189,13 +231,12 @@ async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    throw new Error(
-      `API request failed: ${response.status} ${response.statusText}`,
-    );
+    throw new ApiError(response.status, response.statusText);
   }
 
   return response.json() as Promise<T>;
 }
+
 
 export function getControlSummary(): Promise<OperationalControlSummary> {
   return apiRequest<OperationalControlSummary>("/control/summary");
@@ -231,4 +272,27 @@ export function getAIInvestigation(
   return apiRequest<AIInvestigationAnalysis>(
     `/intelligence/exceptions/${encodeURIComponent(paymentId)}/investigation`,
   );
+}
+
+export async function getExceptionLifecycle(
+  paymentId: string,
+): Promise<ExceptionLifecycleResponse | null> {
+  try {
+    return await apiRequest<ExceptionLifecycleResponse>(
+      `/exceptions/${encodeURIComponent(paymentId)}/lifecycle`,
+    );
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.startsWith("API request failed: 404")
+    ) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+export async function getGovernance(): Promise<GovernanceItem[]> {
+  return apiRequest<GovernanceItem[]>("/control/governance");
 }

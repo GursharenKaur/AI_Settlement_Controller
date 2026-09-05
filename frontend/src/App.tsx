@@ -5,7 +5,11 @@ import { useEffect, useState } from "react";
 import {
   getControlSummary,
   getExceptionDetail,
+  getExceptionLifecycle,
+  getGovernance,
   getRiskQueue,
+  type ExceptionLifecycleResponse,
+  type GovernanceItem,
   type OperationalControlDetail,
   type OperationalControlSummary,
   type OperationalRiskItem,
@@ -58,16 +62,45 @@ function severityVariant(
   return "neutral";
 }
 
+function governanceVariant(
+  level: GovernanceItem["governance"]["governance_level"],
+): "critical" | "warning" | "success" | "neutral" {
+  if (level === "CRITICAL" || level === "HIGH") {
+    return "critical";
+  }
+
+  if (level === "ELEVATED") {
+    return "warning";
+  }
+
+  if (level === "NORMAL") {
+    return "success";
+  }
+
+  return "neutral";
+}
+
 function App() {
   const [summary, setSummary] =
     useState<OperationalControlSummary | null>(null);
 
   const [riskQueue, setRiskQueue] = useState<OperationalRiskItem[]>([]);
 
+  const [governance, setGovernance] = useState<GovernanceItem[]>([]);
+  const [governanceLoading, setGovernanceLoading] = useState(true);
+  const [governanceError, setGovernanceError] = useState<string | null>(null);
+
   const [selectedPaymentId, setSelectedPaymentId] = useState("2");
 
   const [detail, setDetail] =
     useState<OperationalControlDetail | null>(null);
+
+  const [lifecycle, setLifecycle] =
+    useState<ExceptionLifecycleResponse | null>(null);
+
+  const [lifecycleLoading, setLifecycleLoading] = useState(false);
+
+  const [lifecycleError, setLifecycleError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
 
@@ -78,27 +111,72 @@ function App() {
   const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadDashboard() {
       try {
         setLoading(true);
         setError(null);
 
-        const [summaryData, riskQueueData] = await Promise.all([
+        const [summaryResult, riskQueueResult] = await Promise.all([
           getControlSummary(),
           getRiskQueue(),
         ]);
 
-        setSummary(summaryData);
-        setRiskQueue(riskQueueData);
+        if (!cancelled) {
+          setSummary(summaryResult);
+          setRiskQueue(riskQueueResult);
+        }
       } catch (err) {
-        console.error("Failed to load dashboard data:", err);
-        setError("Unable to load settlement control data.");
+        if (!cancelled) {
+          console.error("Failed to load dashboard data:", err);
+          setError("Unable to load settlement control data.");
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     void loadDashboard();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadGovernance() {
+      try {
+        setGovernanceLoading(true);
+        setGovernanceError(null);
+
+        const governanceData = await getGovernance();
+
+        if (!cancelled) {
+          setGovernance(governanceData);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to load governance data:", err);
+          setGovernance([]);
+          setGovernanceError("Unable to load governance data.");
+        }
+      } finally {
+        if (!cancelled) {
+          setGovernanceLoading(false);
+        }
+      }
+    }
+
+    void loadGovernance();
+
+    return () => {
+      cancelled = true;
+      };
   }, []);
 
   useEffect(() => {
@@ -140,12 +218,68 @@ function App() {
     };
   }, [selectedPaymentId, loading, summary]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLifecycle() {
+      try {
+        setLifecycleLoading(true);
+        setLifecycleError(null);
+        setLifecycle(null);
+
+        const lifecycleData =
+          await getExceptionLifecycle(selectedPaymentId);
+
+        if (!cancelled) {
+          setLifecycle(lifecycleData);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error(
+            `Failed to load lifecycle for ${selectedPaymentId}:`,
+            err,
+          );
+
+          setLifecycle(null);
+
+          if (
+            err instanceof Error &&
+            "status" in err &&
+            err.status === 404
+          ) {
+            setLifecycleError(null);
+          } else {
+            setLifecycleError("Unable to load exception lifecycle.");
+          }
+        }
+      } finally {
+        if (!cancelled) {
+          setLifecycleLoading(false);
+        }
+      }
+    }
+
+    if (!loading && summary) {
+      void loadLifecycle();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPaymentId, loading, summary]);
+
+  const selectedGovernance =
+    governance.find(
+      (item) => item.payment_id === selectedPaymentId,
+    ) ?? null;
+
   if (loading) {
     return (
       <div className="app-shell">
         <header className="topbar">
           <div className="brand">
             <div className="brand-mark">SC</div>
+
             <div>
               <div className="brand-name">Settlement Control</div>
               <div className="brand-subtitle">Razorpay Operations</div>
@@ -173,6 +307,7 @@ function App() {
         <header className="topbar">
           <div className="brand">
             <div className="brand-mark">SC</div>
+
             <div>
               <div className="brand-name">Settlement Control</div>
               <div className="brand-subtitle">Razorpay Operations</div>
@@ -220,8 +355,8 @@ function App() {
             <h1>Settlement Control Center</h1>
 
             <p className="page-description">
-              Monitor settlement exceptions, controlled remediation, governance,
-              and human resolution.
+              Monitor settlement exceptions, controlled remediation,
+              governance, and human resolution.
             </p>
           </div>
 
@@ -398,7 +533,13 @@ function App() {
                   <div>
                     <span>Lifecycle</span>
                     <strong>
-                      {formatLabel(detail.lifecycle_status)}
+                      {lifecycleLoading
+                        ? "LOADING"
+                        : lifecycle?.status
+                          ? formatLabel(lifecycle.status)
+                          : lifecycleError
+                            ? "UNAVAILABLE"
+                            : "—"}
                     </strong>
                   </div>
 
@@ -537,6 +678,93 @@ function App() {
               </>
             )}
           </aside>
+        </section>
+
+        <section className="panel governance-panel">
+          <div className="panel-header">
+            <div>
+              <p className="panel-kicker">CONTROL GOVERNANCE</p>
+              <h2>Operational Governance</h2>
+            </div>
+
+            {selectedGovernance && (
+              <StatusBadge
+                variant={governanceVariant(
+                  selectedGovernance.governance.governance_level,
+                )}
+              >
+                {formatLabel(
+                  selectedGovernance.governance.governance_level,
+                )}
+              </StatusBadge>
+            )}
+          </div>
+
+          {governanceLoading ? (
+            <div className="state-card">
+              Loading governance...
+            </div>
+          ) : governanceError ? (
+            <div className="state-card error-state">
+              {governanceError}
+            </div>
+          ) : selectedGovernance ? (
+            <>
+              <div className="detail-grid">
+                <div>
+                  <span>Governance level</span>
+
+                  <strong>
+                    {formatLabel(
+                      selectedGovernance.governance.governance_level,
+                    )}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Escalation</span>
+
+                  <strong>
+                    {selectedGovernance.governance.escalation_required
+                      ? "REQUIRED"
+                      : "NOT REQUIRED"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Human review</span>
+
+                  <strong>
+                    {selectedGovernance.human_review_required
+                      ? "REQUIRED"
+                      : "NOT REQUIRED"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Priority</span>
+
+                  <strong>
+                    {selectedGovernance.priority_score}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="control-state">
+                <div className="state-row">
+                  <span>Governance reason</span>
+
+                  <strong>
+                    {selectedGovernance.governance.governance_reason}
+                  </strong>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="state-card">
+              No governance record available for this exception.
+            </div>
+          )}
         </section>
       </main>
     </div>

@@ -3,6 +3,7 @@ import "./App.css";
 import { useEffect, useState } from "react";
 
 import {
+  acknowledgeException,
   getAIInvestigation,
   getControlSummary,
   getExceptionDetail,
@@ -10,6 +11,7 @@ import {
   getGovernance,
   getHistoricalIntelligence,
   getRiskQueue,
+  resolveException,
   type AIInvestigationAnalysis,
   type ExceptionLifecycleResponse,
   type GovernanceItem,
@@ -132,6 +134,13 @@ function App() {
 
   const [detailError, setDetailError] = useState<string | null>(null);
 
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [showResolveForm, setShowResolveForm] = useState(false);
+  const [resolutionReason, setResolutionReason] =
+    useState("MANUAL_RECONCILIATION");
+  const [resolutionNote, setResolutionNote] = useState("");
+
   useEffect(() => {
     let cancelled = false;
 
@@ -198,7 +207,7 @@ function App() {
 
     return () => {
       cancelled = true;
-      };
+    };
   }, []);
 
   useEffect(() => {
@@ -381,6 +390,71 @@ function App() {
       (item) => item.payment_id === selectedPaymentId,
     ) ?? null;
 
+  async function refreshSelectedException() {
+    const [detailData, lifecycleData, summaryData, riskQueueData] =
+      await Promise.all([
+        getExceptionDetail(selectedPaymentId),
+        getExceptionLifecycle(selectedPaymentId),
+        getControlSummary(),
+        getRiskQueue(),
+      ]);
+
+    setDetail(detailData);
+    setLifecycle(lifecycleData);
+    setSummary(summaryData);
+    setRiskQueue(riskQueueData);
+  }
+
+  async function handleAcknowledge() {
+    try {
+      setActionLoading(true);
+      setActionError(null);
+
+      await acknowledgeException(selectedPaymentId);
+      await refreshSelectedException();
+    } catch (err) {
+      console.error("Failed to acknowledge exception:", err);
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : "Unable to acknowledge exception.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleResolve() {
+    if (!resolutionNote.trim()) {
+      setActionError("Resolution note is required.");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      setActionError(null);
+
+      await resolveException(selectedPaymentId, {
+        resolution_reason: resolutionReason,
+        resolution_note: resolutionNote.trim(),
+      });
+
+      setShowResolveForm(false);
+      setResolutionNote("");
+
+      await refreshSelectedException();
+    } catch (err) {
+      console.error("Failed to resolve exception:", err);
+      setActionError(
+        err instanceof Error
+          ? err.message
+          : "Unable to resolve exception.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="app-shell">
@@ -540,12 +614,15 @@ function App() {
             <div className="queue-list">
               {riskQueue.map((item, index) => (
                 <button
-                  className={`queue-item ${
-                    item.payment_id === selectedPaymentId ? "selected" : ""
-                  }`}
+                  className={`queue-item ${item.payment_id === selectedPaymentId ? "selected" : ""
+                    }`}
                   key={item.payment_id}
                   type="button"
-                  onClick={() => setSelectedPaymentId(item.payment_id)}
+                  onClick={() => {
+                    setSelectedPaymentId(item.payment_id);
+                    setShowResolveForm(false);
+                    setActionError(null);
+                  }}
                 >
                   <div className="queue-rank">{index + 1}</div>
 
@@ -751,22 +828,112 @@ function App() {
 
 
                 <div className="operator-actions">
-                  <button type="button" disabled>
-                    Acknowledge
+                  <button
+                    type="button"
+                    disabled={
+                      actionLoading ||
+                      lifecycle?.status !== "OPEN"
+                    }
+                    onClick={() => void handleAcknowledge()}
+                  >
+                    {actionLoading ? "Processing..." : "Acknowledge"}
                   </button>
 
                   <button
                     type="button"
                     className="primary-action"
-                    disabled
+                    disabled={
+                      actionLoading ||
+                      lifecycle?.status !== "ACKNOWLEDGED"
+                    }
+                    onClick={() => {
+                      setActionError(null);
+                      setShowResolveForm(true);
+                    }}
                   >
                     Resolve Exception
                   </button>
                 </div>
 
+                {showResolveForm && lifecycle?.status === "ACKNOWLEDGED" && (
+                  <div className="resolution-form">
+                    <div className="section-title">
+                      <span>HUMAN RESOLUTION</span>
+                    </div>
+
+                    <label>
+                      Resolution reason
+                      <select
+                        value={resolutionReason}
+                        onChange={(event) =>
+                          setResolutionReason(event.target.value)
+                        }
+                        disabled={actionLoading}
+                      >
+                        <option value="MANUAL_RECONCILIATION">
+                          Manual reconciliation
+                        </option>
+                        <option value="SETTLEMENT_CONFIRMED">
+                          Settlement confirmed
+                        </option>
+                        <option value="DUPLICATE_CONFIRMED">
+                          Duplicate confirmed
+                        </option>
+                        <option value="FALSE_POSITIVE">
+                          False positive
+                        </option>
+                        <option value="OTHER">
+                          Other
+                        </option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Resolution note
+                      <textarea
+                        value={resolutionNote}
+                        onChange={(event) =>
+                          setResolutionNote(event.target.value)
+                        }
+                        placeholder="Describe how the exception was resolved."
+                        rows={4}
+                        disabled={actionLoading}
+                      />
+                    </label>
+
+                    <div className="operator-actions">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowResolveForm(false);
+                          setActionError(null);
+                        }}
+                        disabled={actionLoading}
+                      >
+                        Cancel
+                      </button>
+
+                      <button
+                        type="button"
+                        className="primary-action"
+                        onClick={() => void handleResolve()}
+                        disabled={actionLoading || !resolutionNote.trim()}
+                      >
+                        {actionLoading ? "Resolving..." : "Confirm Resolution"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {actionError && (
+                  <p className="action-error">
+                    {actionError}
+                  </p>
+                )}
+
                 <p className="action-note">
-                  Human actions will be connected to the authoritative backend
-                  workflow in the next integration step.
+                  Human actions are executed through the authoritative exception
+                  lifecycle and recorded in the audit trail.
                 </p>
               </>
             )}
@@ -872,8 +1039,8 @@ function App() {
                         {historicalIntelligence.historical_context
                           .historical_average_delay_hours !== null
                           ? `${historicalIntelligence.historical_context.historical_average_delay_hours.toFixed(
-                              2,
-                            )}h`
+                            2,
+                          )}h`
                           : "—"}
                       </strong>
                     </div>
@@ -883,8 +1050,8 @@ function App() {
                         {historicalIntelligence.historical_context
                           .timing_deviation_hours !== null
                           ? `${historicalIntelligence.historical_context.timing_deviation_hours.toFixed(
-                              2,
-                            )}h`
+                            2,
+                          )}h`
                           : "—"}
                       </strong>
                     </div>

@@ -307,3 +307,32 @@ export async function getGovernance(): Promise<GovernanceItem[]> {
 
   return response.value;
 }
+
+export async function acknowledgeException(
+  paymentId: string,
+): Promise<ExceptionLifecycleResponse> {
+  return apiRequest<ExceptionLifecycleResponse>(
+    `/exceptions/${encodeURIComponent(paymentId)}/acknowledge`,
+    {
+      method: "POST",
+    },
+  );
+}
+
+export interface ExceptionResolutionRequest {
+  resolution_reason: string;
+  resolution_note: string;
+}
+
+export async function resolveException(
+  paymentId: string,
+  request: ExceptionResolutionRequest,
+): Promise<ExceptionLifecycleResponse> {
+  return apiRequest<ExceptionLifecycleResponse>(
+    `/exceptions/${encodeURIComponent(paymentId)}/resolve`,
+    {
+      method: "POST",
+      body: JSON.stringify(request),
+    },
+  );
+}

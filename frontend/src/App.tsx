@@ -876,8 +876,8 @@ function App() {
                         <option value="SETTLEMENT_CONFIRMED">
                           Settlement confirmed
                         </option>
-                        <option value="DUPLICATE_CONFIRMED">
-                          Duplicate confirmed
+                        <option value="DUPLICATE_EXCEPTION">
+                          Duplicate exception
                         </option>
                         <option value="FALSE_POSITIVE">
                           False positive
@@ -907,6 +907,7 @@ function App() {
                         onClick={() => {
                           setShowResolveForm(false);
                           setActionError(null);
+                          setResolutionReason("MANUAL_RECONCILIATION");
                         }}
                         disabled={actionLoading}
                       >

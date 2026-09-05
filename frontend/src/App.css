@@ -589,6 +589,17 @@
 
   .queue-item {
     grid-template-columns: 24px minmax(0, 1fr);
+    width: 100%;
+    border: 0;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .queue-item:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
   }
 
   .queue-impact {

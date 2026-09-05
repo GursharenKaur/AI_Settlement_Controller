@@ -71,10 +71,7 @@ export interface OperationalRiskItem {
   governance: GovernanceClassification;
 }
 
-export interface OperationalRiskResponse {
-  value: OperationalRiskItem[];
-  Count: number;
-}
+export type OperationalRiskResponse = OperationalRiskItem[];
 
 export interface OperationalControlSummary {
   total_exceptions: number;

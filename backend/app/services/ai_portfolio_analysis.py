@@ -3,7 +3,7 @@ from app.schemas.ai_portfolio_context import PortfolioAIContext
 from app.services.gemini_client import client
 
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-3.6-flash"
 
 
 def generate_portfolio_analysis(

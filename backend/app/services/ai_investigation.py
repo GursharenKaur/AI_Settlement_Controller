@@ -5,7 +5,7 @@ from app.schemas.ai_investigation import (
 from app.services.gemini_client import client
 
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-3.6-flash"
 
 class AIInvestigationError(Exception):
     """Raised when AI investigation generation fails."""
